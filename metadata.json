@@ -1,0 +1,6 @@
+{
+  "name": "MODAPKs",
+  "description": "Fast and responsive Android Mod APK download and discovery portal powered by linksshare with real-time Firebase database and custom admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
