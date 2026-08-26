@@ -20,9 +20,10 @@ import {
 import confetti from 'canvas-confetti';
 import { useApp } from '../context/AppContext';
 import { ApkItem, DownloadLink } from '../types';
+import { SmartAdSlot } from './SmartAdSlot';
 
 export const DownloadPage: React.FC = () => {
-  const { selectedApk, setActivePage, recordApkDownload, showNotification } = useApp();
+  const { selectedApk, setActivePage, recordApkDownload, showNotification, adsConfig } = useApp();
   const [countdown, setCountdown] = useState<number>(5);
   const [isReady, setIsReady] = useState<boolean>(false);
   const [downloadStarted, setDownloadStarted] = useState<boolean>(false);

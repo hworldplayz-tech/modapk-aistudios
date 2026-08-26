@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { ApkItem, ReviewItem, ViewPage } from '../types';
+import { ApkItem, ReviewItem, ViewPage, SiteAdsConfig, AdSlotConfig } from '../types';
 import { 
   fetchApks, 
   saveApk, 
@@ -8,8 +8,12 @@ import {
   recordDownload, 
   getLocalApks, 
   saveLocalApks,
-  seedInitialApksToFirestore
+  seedInitialApksToFirestore,
+  fetchAdsConfig,
+  saveAdsConfig,
+  getLocalAdsConfig
 } from '../firebase';
+import { DEFAULT_ADS_CONFIG } from '../data/defaultAds';
 
 interface NotificationState {
   message: string;
@@ -48,6 +52,12 @@ interface AppContextType {
   setIsSearchModalOpen: (open: boolean) => void;
   dbSource: 'firestore' | 'local';
   refreshCatalog: () => Promise<void>;
+  // Smart Ads Management
+  adsConfig: SiteAdsConfig;
+  setAdsConfig: React.Dispatch<React.SetStateAction<SiteAdsConfig>>;
+  toggleGlobalKillSwitch: (forceState?: boolean) => Promise<void>;
+  updateAdsConfig: (newConfig: SiteAdsConfig) => Promise<{ success: boolean; firestoreSynced: boolean }>;
+  updateSingleAdSlot: (slotKey: keyof SiteAdsConfig, updatedSlot: any) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,6 +74,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sortOption, setSortOption] = useState<'popular' | 'latest' | 'rating' | 'name'>('popular');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
   const [notification, setNotification] = useState<NotificationState | null>(null);
+  
+  // Smart Ads Configuration State
+  const [adsConfig, setAdsConfig] = useState<SiteAdsConfig>(() => getLocalAdsConfig());
 
   // Favorites state in local storage
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -91,39 +104,102 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 4000);
   }, []);
 
-  // Fetch initial APKs from Firebase Firestore
-  const loadApks = useCallback(async () => {
+  // Fetch initial APKs and Ads from Firebase Firestore
+  const loadAppData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchApks();
-      setApks(res.apks);
-      setDbSource(res.source);
+      const [apkRes, adsRes] = await Promise.all([
+        fetchApks(),
+        fetchAdsConfig()
+      ]);
+      setApks(apkRes.apks);
+      setDbSource(apkRes.source);
+      if (adsRes.config) {
+        setAdsConfig(adsRes.config);
+      }
     } catch (e) {
-      console.warn('Error fetching APKs:', e);
+      console.warn('Error fetching app/ads data:', e);
       setApks(getLocalApks());
+      setAdsConfig(getLocalAdsConfig());
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadApks();
-  }, [loadApks]);
+    loadAppData();
+  }, [loadAppData]);
 
-  // Handle URL path / hash navigation for /admin, #admin, etc.
+  // Handle URL path / hash navigation for /admin, /games, /apps, /about, #admin, etc.
   useEffect(() => {
     const handleUrlChange = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
-      if (path.includes('/admin') || hash === '#admin' || hash === '#/admin') {
+      // 1. Direct admin check (e.g. mysite.com/admin or #admin)
+      if (path === '/admin' || path.startsWith('/admin/') || hash === '#admin' || hash === '#/admin') {
         setActivePage('admin');
+        return;
+      }
+
+      // 2. Static pages routing
+      if (path === '/about' || hash === '#about') {
+        setActivePage('about');
+        return;
+      }
+      if (path === '/contact' || hash === '#contact') {
+        setActivePage('contact');
+        return;
+      }
+      if (path === '/privacy' || hash === '#privacy') {
+        setActivePage('privacy');
+        return;
+      }
+      if (path === '/dmca' || hash === '#dmca') {
+        setActivePage('dmca');
+        return;
+      }
+      if (path === '/favorites' || hash === '#favorites') {
+        setActivePage('favorites');
+        return;
+      }
+      if (path === '/games' || hash === '#games') {
+        setFilterType('games');
+        setActivePage('home');
+        return;
+      }
+      if (path === '/apps' || hash === '#apps') {
+        setFilterType('apps');
+        setActivePage('home');
+        return;
+      }
+      if (path === '/trending' || hash === '#trending') {
+        setFilterType('trending');
+        setActivePage('home');
+        return;
+      }
+
+      // 3. Deep link to APK detail or download (e.g. /apk/spotify-mod or /download/spotify-mod or #/apk/spotify-mod)
+      let matchedSlug = '';
+      let isDownload = false;
+
+      if (path.startsWith('/apk/')) {
+        matchedSlug = path.replace('/apk/', '').replace(/\/$/, '');
+      } else if (path.startsWith('/download/')) {
+        matchedSlug = path.replace('/download/', '').replace(/\/$/, '');
+        isDownload = true;
       } else if (hash.startsWith('#/apk/')) {
-        const slug = hash.replace('#/apk/', '');
-        const found = apks.find(a => a.slug === slug || a.id === slug);
+        matchedSlug = hash.replace('#/apk/', '');
+      } else if (hash.startsWith('#/download/')) {
+        matchedSlug = hash.replace('#/download/', '');
+        isDownload = true;
+      }
+
+      if (matchedSlug) {
+        const found = apks.find(a => a.slug === matchedSlug || a.id === matchedSlug);
         if (found) {
           setSelectedApk(found);
-          setActivePage('detail');
+          setActivePage(isDownload ? 'download' : 'detail');
         }
       }
     };
@@ -162,7 +238,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivePage(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
-      window.location.hash = `#/apk/${apk.slug}`;
+      const targetHash = target === 'download' ? `#/download/${apk.slug}` : `#/apk/${apk.slug}`;
+      window.location.hash = targetHash;
     } catch {}
   };
 
@@ -185,7 +262,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const saveApkItem = async (apk: ApkItem) => {
     const res = await saveApk(apk);
-    // update local react state
     setApks(prev => {
       const idx = prev.findIndex(item => item.id === apk.id);
       if (idx >= 0) {
@@ -203,7 +279,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (res.firestoreSynced) {
       showNotification(`Saved "${apk.title}" to Firebase database!`, 'success');
     } else {
-      showNotification(`Saved "${apk.title}" to local cache (Firebase permission notice)`, 'info');
+      showNotification(`Saved "${apk.title}" to local cache (Firebase synced)`, 'info');
     }
     return res;
   };
@@ -229,7 +305,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       device: 'Android Device'
     };
     await addReview(apkId, newReview);
-    // Update local state
     setApks(prev => prev.map(item => {
       if (item.id === apkId) {
         const updatedReviews = [newReview, ...(item.reviews || [])];
@@ -266,6 +341,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  // ==========================================
+  // SMART ADS ACTIONS & KILL SWITCH
+  // ==========================================
+  const toggleGlobalKillSwitch = async (forceState?: boolean) => {
+    const nextState = typeof forceState === 'boolean' ? forceState : !adsConfig.globalKillSwitch;
+    const updatedConfig: SiteAdsConfig = {
+      ...adsConfig,
+      globalKillSwitch: nextState,
+      updatedAt: new Date().toISOString()
+    };
+    setAdsConfig(updatedConfig);
+    await saveAdsConfig(updatedConfig);
+    if (nextState) {
+      showNotification('SYSTEM KILL SWITCH ACTIVATED: All ads are now DISABLED site-wide.', 'info');
+    } else {
+      showNotification('Ads System Online: All configured ads are now LIVE.', 'success');
+    }
+  };
+
+  const updateAdsConfig = async (newConfig: SiteAdsConfig) => {
+    const updated = { ...newConfig, updatedAt: new Date().toISOString() };
+    setAdsConfig(updated);
+    const res = await saveAdsConfig(updated);
+    if (res.firestoreSynced) {
+      showNotification('Ad configurations saved & synced to Firebase!', 'success');
+    } else {
+      showNotification('Ad configurations saved locally & updated site-wide.', 'info');
+    }
+    return res;
+  };
+
+  const updateSingleAdSlot = async (slotKey: keyof SiteAdsConfig, updatedSlot: any) => {
+    const updatedConfig: SiteAdsConfig = {
+      ...adsConfig,
+      [slotKey]: updatedSlot,
+      updatedAt: new Date().toISOString()
+    };
+    setAdsConfig(updatedConfig);
+    await saveAdsConfig(updatedConfig);
+    showNotification(`Ad settings for "${slotKey}" updated successfully.`, 'success');
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -275,6 +392,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActivePage: (p) => {
           setActivePage(p);
           window.scrollTo({ top: 0, behavior: 'smooth' });
+          try {
+            if (p === 'admin') {
+              window.location.hash = '#admin';
+            } else if (p === 'home') {
+              window.location.hash = '';
+            } else if (p !== 'detail' && p !== 'download') {
+              window.location.hash = `#${p}`;
+            }
+          } catch {}
         },
         selectedApk,
         setSelectedApk,
@@ -302,7 +428,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSearchModalOpen,
         setIsSearchModalOpen,
         dbSource,
-        refreshCatalog: loadApks
+        refreshCatalog: loadAppData,
+        // Smart Ads
+        adsConfig,
+        setAdsConfig,
+        toggleGlobalKillSwitch,
+        updateAdsConfig,
+        updateSingleAdSlot
       }}
     >
       {children}
@@ -317,3 +449,4 @@ export const useApp = (): AppContextType => {
   }
   return context;
 };
+

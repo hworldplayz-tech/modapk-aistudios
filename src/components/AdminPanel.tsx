@@ -23,12 +23,15 @@ import {
   RefreshCw,
   Sliders,
   Flame,
-  Star
+  Star,
+  Radio,
+  Power
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ApkItem, DownloadLink } from '../types';
 import { CATEGORIES_LIST, INITIAL_APKS } from '../data/initialApks';
 import { seedInitialApksToFirestore } from '../firebase';
+import { AdminAdsManager } from './AdminAdsManager';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -42,8 +45,12 @@ export const AdminPanel: React.FC = () => {
     navigateToApk,
     showNotification,
     dbSource,
-    refreshCatalog
+    refreshCatalog,
+    adsConfig
   } = useApp();
+
+  // Active Admin Section
+  const [adminView, setAdminView] = useState<'catalog' | 'ads' | 'database'>('catalog');
 
   // Login Form state
   const [username, setUsername] = useState('');
@@ -420,45 +427,103 @@ service cloud.firestore {
         </div>
       </div>
 
-      {/* Database Setup & Firebase Rules Helper Box */}
-      <div className="bg-gradient-to-r from-zinc-900 to-zinc-950 text-white p-6 rounded-3xl border border-zinc-800 shadow-md space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-            <Sparkles className="w-4 h-4" />
-            <span>Firebase Firestore Configuration Helper (modapk-4955b)</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleSeedDatabase}
-              disabled={seedingLoading}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-zinc-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${seedingLoading ? 'animate-spin' : ''}`} />
-              <span>{seedingLoading ? 'Seeding...' : 'Seed Catalog to Firestore'}</span>
-            </button>
+      {/* Main Admin Navigation Tabs */}
+      <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 p-2 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-x-auto">
+        <button
+          onClick={() => setAdminView('catalog')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            adminView === 'catalog'
+              ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Catalog Manager ({apks.length})</span>
+        </button>
 
-            <button
-              onClick={handleCopyRules}
-              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
-            >
-              {copiedRules ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedRules ? 'Copied!' : 'Copy Firestore Rules'}</span>
-            </button>
-          </div>
-        </div>
+        <button
+          onClick={() => setAdminView('ads')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            adminView === 'ads'
+              ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+          }`}
+        >
+          <Radio className="w-4 h-4" />
+          <span>Smart Ads & Adsterra Manager</span>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+            adsConfig.globalKillSwitch 
+              ? 'bg-rose-500 text-white' 
+              : 'bg-emerald-950/30 text-emerald-600 dark:text-emerald-300'
+          }`}>
+            {adsConfig.globalKillSwitch ? 'MUTED' : 'LIVE'}
+          </span>
+        </button>
 
-        <p className="text-xs text-zinc-400 leading-relaxed">
-          To ensure all users can read and your admin panel can write to your Firebase database without permission errors, open your 
-          <strong className="text-emerald-400"> Firebase Console &gt; Firestore Database &gt; Rules tab</strong> and paste the rules below:
-        </p>
-
-        <pre className="p-3 bg-black/60 rounded-xl text-[11px] font-mono text-emerald-300 overflow-x-auto border border-white/10">
-          {firestoreRulesText}
-        </pre>
+        <button
+          onClick={() => setAdminView('database')}
+          className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition cursor-pointer ${
+            adminView === 'database'
+              ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          <span>Firebase Database & Rules</span>
+        </button>
       </div>
 
-      {/* APKs Management Table */}
+      {/* ========================================================= */}
+      {/* 1. SMART ADS & ADSTERRA MANAGER VIEW */}
+      {/* ========================================================= */}
+      {adminView === 'ads' && <AdminAdsManager />}
+
+      {/* ========================================================= */}
+      {/* 2. DATABASE & FIREBASE RULES VIEW */}
+      {/* ========================================================= */}
+      {adminView === 'database' && (
+        <div className="bg-gradient-to-r from-zinc-900 to-zinc-950 text-white p-6 rounded-3xl border border-zinc-800 shadow-md space-y-4 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <Sparkles className="w-4 h-4" />
+              <span>Firebase Firestore Configuration Helper (modapk-4955b)</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSeedDatabase}
+                disabled={seedingLoading}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-zinc-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${seedingLoading ? 'animate-spin' : ''}`} />
+                <span>{seedingLoading ? 'Seeding...' : 'Seed Catalog to Firestore'}</span>
+              </button>
+
+              <button
+                onClick={handleCopyRules}
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
+              >
+                {copiedRules ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedRules ? 'Copied!' : 'Copy Firestore Rules'}</span>
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            To ensure all users can read and your admin panel can write to your Firebase database without permission errors, open your 
+            <strong className="text-emerald-400"> Firebase Console &gt; Firestore Database &gt; Rules tab</strong> and paste the rules below:
+          </p>
+
+          <pre className="p-3 bg-black/60 rounded-xl text-[11px] font-mono text-emerald-300 overflow-x-auto border border-white/10">
+            {firestoreRulesText}
+          </pre>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 3. APKs CATALOG MANAGEMENT TABLE VIEW */}
+      {/* ========================================================= */}
+      {adminView === 'catalog' && (
       <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden space-y-4 p-6">
         
         {/* Table Controls */}
@@ -592,6 +657,7 @@ service cloud.firestore {
           </table>
         </div>
       </div>
+      )}
 
       {/* Add / Edit Form Modal */}
       {isFormOpen && (

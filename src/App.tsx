@@ -11,6 +11,9 @@ import { DownloadPage } from './components/DownloadPage';
 import { AdminPanel } from './components/AdminPanel';
 import { AboutPage, ContactPage, PrivacyPage, DmcaPage, FavoritesPage } from './components/StaticPages';
 import { Footer } from './components/Footer';
+import { SmartAdSlot } from './components/SmartAdSlot';
+import { FloatingAdBanner } from './components/FloatingAdBanner';
+import { PopunderManager } from './components/PopunderManager';
 import { 
   Sparkles, 
   Gamepad2, 
@@ -31,7 +34,8 @@ const MainContent: React.FC = () => {
     filterType, 
     sortOption, 
     notification,
-    searchQuery
+    searchQuery,
+    adsConfig
   } = useApp();
 
   // Filter and Sort the catalog items
@@ -103,11 +107,25 @@ const MainContent: React.FC = () => {
       {/* Main Header */}
       <Navbar />
 
+      {/* Background Popunder Manager */}
+      <PopunderManager />
+
+      {/* Sticky Mobile/Desktop Bottom Ad Banner */}
+      <FloatingAdBanner />
+
       {/* Instant Search Modal (Cmd+K) */}
       <SearchModal />
 
       {/* Main App Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16">
+        
+        {/* Global Top Header Banner (728x90) */}
+        {activePage !== 'admin' && (
+          <div className="mb-4">
+            <SmartAdSlot slot={adsConfig.headerBanner} label="Sponsored Header" />
+          </div>
+        )}
+
         {activePage === 'home' && (
           <div>
             {/* Fancy Hero Slider for Featured Apps */}
@@ -115,6 +133,11 @@ const MainContent: React.FC = () => {
 
             {/* Category & Filter Tabs */}
             <CategoryFilter />
+
+            {/* In-Feed Ad Banner (300x250 or 468x60) */}
+            <div className="my-3">
+              <SmartAdSlot slot={adsConfig.inContentBanner} label="Recommended Sponsor" />
+            </div>
 
             {/* Catalog Grid Header */}
             <div className="flex items-center justify-between mb-4">

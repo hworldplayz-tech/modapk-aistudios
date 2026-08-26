@@ -11,8 +11,9 @@ import {
   orderBy,
   onSnapshot
 } from 'firebase/firestore';
-import { ApkItem, ReviewItem } from './types';
+import { ApkItem, ReviewItem, SiteAdsConfig } from './types';
 import { INITIAL_APKS } from './data/initialApks';
+import { DEFAULT_ADS_CONFIG } from './data/defaultAds';
 
 const firebaseConfig = {
   apiKey: "AIzaSyACFfVdeDDmvrSYrJ9FrLprYNOiVVBCjHY",
@@ -195,3 +196,73 @@ export async function recordDownload(apkId: string): Promise<void> {
     }
   }
 }
+
+// ==========================================
+// SMART ADS CONFIGURATION SYNC
+// ==========================================
+const ADS_STORAGE_KEY = 'modapks_ads_configuration_v1';
+const SETTINGS_COLLECTION = 'settings';
+const ADS_DOC_ID = 'ads_configuration';
+
+export function getLocalAdsConfig(): SiteAdsConfig {
+  try {
+    const cached = localStorage.getItem(ADS_STORAGE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return { ...DEFAULT_ADS_CONFIG, ...parsed };
+    }
+  } catch (e) {
+    console.warn('Failed reading ads config from local storage:', e);
+  }
+  return DEFAULT_ADS_CONFIG;
+}
+
+export function saveLocalAdsConfig(config: SiteAdsConfig): void {
+  try {
+    localStorage.setItem(ADS_STORAGE_KEY, JSON.stringify(config));
+  } catch (e) {
+    console.warn('Failed saving ads config to local storage:', e);
+  }
+}
+
+export async function fetchAdsConfig(): Promise<{ config: SiteAdsConfig; source: 'firestore' | 'local' }> {
+  try {
+    const docRef = doc(db, SETTINGS_COLLECTION, ADS_DOC_ID);
+    const querySnapshot = await getDocs(query(collection(db, SETTINGS_COLLECTION)));
+    
+    let firestoreData: SiteAdsConfig | null = null;
+    querySnapshot.forEach((d) => {
+      if (d.id === ADS_DOC_ID) {
+        firestoreData = d.data() as SiteAdsConfig;
+      }
+    });
+
+    if (firestoreData) {
+      const merged = { ...DEFAULT_ADS_CONFIG, ...firestoreData };
+      saveLocalAdsConfig(merged);
+      return { config: merged, source: 'firestore' };
+    } else {
+      const local = getLocalAdsConfig();
+      // Try to seed initial ads config to firestore doc
+      setDoc(docRef, local, { merge: true }).catch(() => {});
+      return { config: local, source: 'local' };
+    }
+  } catch (err) {
+    console.warn('Firestore ads config fetch fallback:', err);
+    return { config: getLocalAdsConfig(), source: 'local' };
+  }
+}
+
+export async function saveAdsConfig(config: SiteAdsConfig): Promise<{ success: boolean; firestoreSynced: boolean }> {
+  saveLocalAdsConfig(config);
+  let firestoreSynced = false;
+  try {
+    const docRef = doc(db, SETTINGS_COLLECTION, ADS_DOC_ID);
+    await setDoc(docRef, config, { merge: true });
+    firestoreSynced = true;
+  } catch (error) {
+    console.warn('Firestore ads config write failed (stored locally):', error);
+  }
+  return { success: true, firestoreSynced };
+}
+

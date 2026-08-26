@@ -74,3 +74,38 @@ export interface CategoryMeta {
   type: 'games' | 'apps' | 'all';
   count?: number;
 }
+
+export interface AdSlotConfig {
+  id: string;
+  name: string;
+  description: string;
+  dimensions: string; // e.g. '728x90', '300x250', '320x50', '160x600'
+  enabled: boolean;
+  code: string; // Custom HTML/JS script snippet from Adsterra, AdSense, etc.
+  directUrl?: string; // Optional direct smartlink url for fallback clicks
+}
+
+export interface SiteAdsConfig {
+  globalKillSwitch: boolean; // TRUE = ALL ADS OFF (Kill switch active), FALSE = ADS ENABLED
+  demoMode: boolean; // Displays stylish preview placeholders if ad snippet code is empty
+  adsterraSmartLink: string; // Global Smartlink URL for Adsterra
+  headerBanner: AdSlotConfig; // 728x90 (Desktop / Tablet) or responsive
+  inContentBanner: AdSlotConfig; // 300x250 / 468x60 (In-feed & content)
+  sidebarBanner: AdSlotConfig; // 160x600 / 300x600 (Desktop sidebar)
+  floatingBottomBanner: AdSlotConfig; // 320x50 / 300x250 (Sticky footer on mobile & web)
+  downloadPageTop: AdSlotConfig; // Download page top banner
+  downloadPageTimer: AdSlotConfig; // Download page under countdown timer banner
+  nativeGridBanner: AdSlotConfig; // Native recommendation widget
+  popunder: {
+    enabled: boolean;
+    code: string;
+    triggerOncePerSession: boolean;
+  };
+  smartLinkButtons: {
+    enabled: boolean;
+    buttonLabel: string;
+    url: string;
+  };
+  updatedAt?: string;
+}
+
