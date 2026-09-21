@@ -136,46 +136,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
-      // 1. Direct admin check (e.g. mysite.com/admin or #admin)
-      if (path === '/admin' || path.startsWith('/admin/') || hash === '#admin' || hash === '#/admin') {
-        setActivePage('admin');
-        return;
-      }
-
-      // 2. Static pages routing
-      if (path === '/about' || hash === '#about') {
-        setActivePage('about');
-        return;
-      }
-      if (path === '/contact' || hash === '#contact') {
-        setActivePage('contact');
-        return;
-      }
-      if (path === '/privacy' || hash === '#privacy') {
-        setActivePage('privacy');
-        return;
-      }
-      if (path === '/dmca' || hash === '#dmca') {
-        setActivePage('dmca');
-        return;
-      }
-      if (path === '/favorites' || hash === '#favorites') {
+      // 1. Explicit hash checks first (takes precedence so clicking Favorites from /admin works!)
+      if (hash === '#favorites' || hash === '#/favorites' || path === '/favorites') {
         setActivePage('favorites');
         return;
       }
-      if (path === '/games' || hash === '#games') {
+      if (hash === '#games' || hash === '#/games' || path === '/games') {
         setFilterType('games');
+        setSelectedCategory('all');
         setActivePage('home');
         return;
       }
-      if (path === '/apps' || hash === '#apps') {
+      if (hash === '#apps' || hash === '#/apps' || path === '/apps') {
         setFilterType('apps');
+        setSelectedCategory('all');
         setActivePage('home');
         return;
       }
-      if (path === '/trending' || hash === '#trending') {
+      if (hash === '#trending' || hash === '#/trending' || path === '/trending') {
         setFilterType('trending');
+        setSelectedCategory('all');
         setActivePage('home');
+        return;
+      }
+      if (hash === '#about' || hash === '#/about' || path === '/about') {
+        setActivePage('about');
+        return;
+      }
+      if (hash === '#contact' || hash === '#/contact' || path === '/contact') {
+        setActivePage('contact');
+        return;
+      }
+      if (hash === '#privacy' || hash === '#/privacy' || path === '/privacy') {
+        setActivePage('privacy');
+        return;
+      }
+      if (hash === '#dmca' || hash === '#/dmca' || path === '/dmca') {
+        setActivePage('dmca');
+        return;
+      }
+
+      // 2. Direct admin check (e.g. mysite.com/admin or #admin)
+      if (path === '/admin' || path.startsWith('/admin/') || hash === '#admin' || hash === '#/admin') {
+        setActivePage('admin');
         return;
       }
 

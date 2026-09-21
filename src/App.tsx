@@ -14,6 +14,7 @@ import { Footer } from './components/Footer';
 import { SmartAdSlot } from './components/SmartAdSlot';
 import { FloatingAdBanner } from './components/FloatingAdBanner';
 import { PopunderManager } from './components/PopunderManager';
+import { WhatsAppModal } from './components/WhatsAppModal';
 import { 
   Sparkles, 
   Gamepad2, 
@@ -115,6 +116,9 @@ const MainContent: React.FC = () => {
 
       {/* Instant Search Modal (Cmd+K) */}
       <SearchModal />
+
+      {/* Official WhatsApp Channel Join Popup */}
+      <WhatsAppModal />
 
       {/* Main App Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 pb-16 overflow-x-hidden">

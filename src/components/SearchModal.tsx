@@ -68,8 +68,8 @@ export const SearchModal: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search modded games, apps, features (e.g. Spotify, Unlimited Coins, Pro)..."
-            className="w-full bg-transparent text-sm sm:text-base text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+            placeholder="Search modded games, apps, features..."
+            className="w-full bg-transparent text-sm sm:text-base text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none truncate"
           />
           {query && (
             <button

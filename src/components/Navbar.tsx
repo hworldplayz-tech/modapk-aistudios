@@ -40,20 +40,42 @@ export const Navbar: React.FC = () => {
       setFilterType('all');
       setSelectedCategory('all');
       setActivePage('home');
+      try {
+        if (window.location.hash || window.location.pathname !== '/') {
+          window.history.pushState(null, '', '/');
+        }
+      } catch {}
     } else if (page === 'games') {
       setFilterType('games');
       setSelectedCategory('all');
       setActivePage('home');
+      try {
+        window.location.hash = '#games';
+      } catch {}
     } else if (page === 'apps') {
       setFilterType('apps');
       setSelectedCategory('all');
       setActivePage('home');
+      try {
+        window.location.hash = '#apps';
+      } catch {}
     } else if (page === 'trending') {
       setFilterType('trending');
       setSelectedCategory('all');
       setActivePage('home');
+      try {
+        window.location.hash = '#trending';
+      } catch {}
     } else if (page === 'favorites') {
       setActivePage('favorites');
+      try {
+        // If current path is /admin, updating hash to #favorites should also be pushed cleanly
+        if (window.location.pathname.startsWith('/admin')) {
+          window.history.pushState(null, '', '/#favorites');
+        } else {
+          window.location.hash = '#favorites';
+        }
+      } catch {}
     }
     setMobileMenuOpen(false);
   };
@@ -68,11 +90,14 @@ export const Navbar: React.FC = () => {
             <button
               id="brand-logo-btn"
               onClick={() => handleNavClick('home')}
-              className="flex items-center gap-2.5 text-left group"
+              className="flex items-center gap-2.5 text-left group cursor-pointer"
+              title="Return to Home Page"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-                <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="MODAPKs Logo"
+                className="w-10 h-10 rounded-xl object-contain drop-shadow-md group-hover:scale-105 group-hover:rotate-6 transition-all duration-300"
+              />
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xl font-extrabold tracking-tight font-display bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
@@ -173,12 +198,13 @@ export const Navbar: React.FC = () => {
             <button
               id="header-search-btn"
               onClick={() => setIsSearchModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200/80 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-full border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200/80 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 rounded-full border border-zinc-200 dark:border-zinc-800 transition-all cursor-pointer max-w-[130px] sm:max-w-[180px] md:max-w-[220px] lg:max-w-xs shrink-0"
+              title="Search mod APKs (Cmd+K)"
             >
-              <Search className="w-4 h-4 text-emerald-500" />
-              <span className="hidden sm:inline">Search mod APKs...</span>
-              <span className="sm:hidden">Search</span>
-              <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-zinc-800 text-zinc-500 rounded border border-zinc-200 dark:border-zinc-700">
+              <Search className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span className="truncate hidden sm:inline text-zinc-600 dark:text-zinc-300">Search APKs...</span>
+              <span className="sm:hidden text-zinc-600 dark:text-zinc-300">Search</span>
+              <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-zinc-800 text-zinc-500 rounded border border-zinc-200 dark:border-zinc-700 ml-auto shrink-0">
                 ⌘K
               </kbd>
             </button>

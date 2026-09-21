@@ -57,10 +57,10 @@ export const HeroSlider: React.FC = () => {
         <img
           src={activeApk.bannerUrl || activeApk.screenshots[0] || activeApk.iconUrl}
           alt={activeApk.title}
-          className="w-full h-full object-cover object-center scale-105 filter blur-xs brightness-40 transition-all duration-700 ease-out"
+          className="w-full h-full object-cover object-center scale-105 filter brightness-75 transition-all duration-700 ease-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/85 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/85 via-zinc-950/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-black/20" />
       </div>
 
       {/* Decorative Emerald Glow Orb */}

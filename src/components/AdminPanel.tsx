@@ -401,9 +401,11 @@ service cloud.firestore {
       <div className="max-w-md mx-auto py-12 px-4 animate-in fade-in duration-300">
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-zinc-200 dark:border-zinc-800 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 flex items-center justify-center mx-auto mb-2">
-              <Lock className="w-7 h-7" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="MODAPKs Logo"
+              className="w-16 h-16 rounded-2xl mx-auto mb-2 object-contain drop-shadow-md"
+            />
             <h1 className="text-2xl font-black font-display text-zinc-900 dark:text-zinc-100">
               MODAPKs Admin Portal
             </h1>
@@ -476,9 +478,11 @@ service cloud.firestore {
       {/* Top Admin Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500 text-emerald-500 flex items-center justify-center">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="MODAPKs Logo"
+            className="w-12 h-12 rounded-2xl object-contain drop-shadow-md border border-zinc-200 dark:border-zinc-800 p-1 bg-zinc-50 dark:bg-zinc-950"
+          />
           <div>
             <h1 className="text-xl sm:text-2xl font-extrabold font-display text-zinc-900 dark:text-zinc-100">
               Admin Control Center
@@ -629,14 +633,14 @@ service cloud.firestore {
             </p>
           </div>
 
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <div className="relative w-full sm:w-64 md:w-72 lg:w-80 shrink-0">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
             <input
               type="text"
               value={adminSearch}
               onChange={(e) => setAdminSearch(e.target.value)}
               placeholder="Search published APKs..."
-              className="w-full text-xs pl-9 pr-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full text-xs sm:text-sm pl-9 pr-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 truncate"
             />
           </div>
         </div>

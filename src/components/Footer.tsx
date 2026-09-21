@@ -1,10 +1,9 @@
 import React from 'react';
 import { 
-  ShieldCheck, 
   Heart, 
   ExternalLink, 
   Lock, 
-  Send, 
+  MessageCircle, 
   Smartphone, 
   Gamepad2, 
   Zap,
@@ -22,14 +21,26 @@ export const Footer: React.FC = () => {
           
           {/* Brand & About */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-                <ShieldCheck className="w-6 h-6 stroke-[2.2]" />
-              </div>
+            <button
+              onClick={() => {
+                setActivePage('home');
+                try {
+                  if (window.location.hash || window.location.pathname !== '/') {
+                    window.history.pushState(null, '', '/');
+                  }
+                } catch {}
+              }}
+              className="flex items-center gap-2.5 text-left group cursor-pointer"
+            >
+              <img
+                src="/logo.png"
+                alt="MODAPKs Logo"
+                className="w-10 h-10 rounded-xl object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+              />
               <span className="text-2xl font-black font-display tracking-tight bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
                 MODAPKs
               </span>
-            </div>
+            </button>
 
             <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-sm">
               The premier portal for 100% verified, virus-free modded Android games and apps. Enjoy extreme download speeds, ad-free experience, and VIP unlocked features.
@@ -155,16 +166,16 @@ export const Footer: React.FC = () => {
               Stay Connected
             </h4>
             <p className="text-xs text-zinc-500 leading-relaxed">
-              Join our Telegram channel to receive instant mod update notifications directly on Android.
+              Join our official WhatsApp channel to receive instant mod update notifications directly on Android.
             </p>
             <a
-              href="https://t.me/linksshare_modapks"
+              href="https://whatsapp.com/channel/0029VamSzhm9MF8wWp06TG2f"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-400 text-xs font-bold hover:bg-cyan-500 hover:text-zinc-950 transition"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500 hover:text-zinc-950 transition"
             >
-              <Send className="w-3.5 h-3.5" />
-              <span>Join Telegram Channel</span>
+              <MessageCircle className="w-3.5 h-3.5" />
+              <span>Join WhatsApp Channel</span>
             </a>
 
             {/* Secret / Direct Admin route link for the owner */}

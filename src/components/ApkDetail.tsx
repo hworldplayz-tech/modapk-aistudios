@@ -20,7 +20,8 @@ import {
   User,
   Zap,
   Clock,
-  FileCheck
+  FileCheck,
+  MessageCircle
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { ApkItem } from '../types';
@@ -528,21 +529,21 @@ export const ApkDetail: React.FC = () => {
             </button>
           </div>
 
-          {/* Telegram Channel Promotion */}
-          <div className="bg-gradient-to-br from-cyan-900/60 to-blue-900/60 rounded-3xl p-6 border border-cyan-500/30 text-white space-y-3">
-            <div className="flex items-center gap-2 text-cyan-400 font-bold text-sm">
-              <Zap className="w-4 h-4" /> Join Telegram for Instant Updates
+          {/* WhatsApp Channel Promotion */}
+          <div className="bg-gradient-to-br from-emerald-900/60 to-teal-900/60 rounded-3xl p-6 border border-emerald-500/30 text-white space-y-3">
+            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <MessageCircle className="w-4 h-4" /> Join WhatsApp for Instant Updates
             </div>
             <p className="text-xs text-zinc-300">
-              Get notified immediately when new game mods and APK updates are released!
+              Get notified immediately on WhatsApp when new game mods and APK updates are released!
             </p>
             <a
-              href="https://t.me/linksshare_modapks"
+              href="https://whatsapp.com/channel/0029VamSzhm9MF8wWp06TG2f"
               target="_blank"
               rel="noreferrer"
-              className="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition block text-center"
+              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition block text-center shadow-md shadow-emerald-500/20"
             >
-              Join Official Channel
+              Join Official WhatsApp Channel
             </a>
           </div>
 
