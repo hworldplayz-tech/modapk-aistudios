@@ -25,6 +25,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { ApkItem } from '../types';
 import { ApkCard } from './ApkCard';
+import { SmartAdSlot } from './SmartAdSlot';
 
 export const ApkDetail: React.FC = () => {
   const { 
@@ -35,7 +36,8 @@ export const ApkDetail: React.FC = () => {
     isFavorite,
     submitReview,
     showNotification,
-    apks
+    apks,
+    adsConfig
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'info' | 'mod' | 'reviews'>('info');
@@ -279,6 +281,11 @@ export const ApkDetail: React.FC = () => {
         </div>
       )}
 
+      {/* In-Article Smart Ad Banner */}
+      <div className="my-2">
+        <SmartAdSlot slot={adsConfig.inContentBanner} label="Recommended Sponsor" />
+      </div>
+
       {/* Lightbox for screenshots */}
       {selectedScreenshot && (
         <div 
@@ -517,6 +524,11 @@ export const ApkDetail: React.FC = () => {
             >
               Join Official Channel
             </a>
+          </div>
+
+          {/* Desktop Sidebar Ad Banner (160x600 or 300x250/600) */}
+          <div className="sticky top-24">
+            <SmartAdSlot slot={adsConfig.sidebarBanner} label="Sponsored Ad" />
           </div>
 
         </div>

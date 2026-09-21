@@ -92,8 +92,11 @@ export const DownloadPage: React.FC = () => {
   };
 
   return (
-    <div id="download-page-container" className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300 pb-20">
+    <div id="download-page-container" className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
       
+      {/* Top Header Smart Ad Slot */}
+      <SmartAdSlot slot={adsConfig.downloadPageTop} label="Sponsored Download Server" />
+
       {/* Back to Details */}
       <button 
         onClick={() => setActivePage('detail')}
@@ -129,7 +132,7 @@ export const DownloadPage: React.FC = () => {
           </p>
 
           {/* Countdown or Ready State */}
-          <div className="my-8 w-full max-w-md">
+          <div className="my-6 w-full max-w-md">
             {!isReady ? (
               <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
                 <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
@@ -176,6 +179,11 @@ export const DownloadPage: React.FC = () => {
                 )}
               </div>
             )}
+
+            {/* Smart Timer Ad Slot (Positioned directly below countdown/button, non-obtrusive) */}
+            <div className="mt-4">
+              <SmartAdSlot slot={adsConfig.downloadPageTimer} label="Sponsored Ad" />
+            </div>
           </div>
 
           {/* VirusTotal Verification Chip */}
@@ -198,6 +206,38 @@ export const DownloadPage: React.FC = () => {
         </div>
 
         <div className="space-y-2.5">
+          {/* Sponsored SmartLink Fast Mirror CDN (Non-intrusive, opens in new tab) */}
+          {!adsConfig.globalKillSwitch && adsConfig.smartLinkButtons.enabled && (
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/20 via-zinc-900 to-zinc-950 border border-emerald-500/40 hover:border-emerald-500 transition group shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-xs">
+                  <Sparkles className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-xs sm:text-sm font-bold text-zinc-100 flex items-center gap-1.5">
+                    <span>{adsConfig.smartLinkButtons.buttonLabel || '⚡ Fast Mirror CDN (Sponsored)'}</span>
+                    <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
+                      VIP SPEED
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-zinc-400">
+                    High Speed Direct Cloud • 0s Queue • Adsterra Partner Mirror
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href={adsConfig.smartLinkButtons.url || adsConfig.adsterraSmartLink || 'https://linksshare.online'}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+              >
+                <span>Fast Access</span>
+                <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
+              </a>
+            </div>
+          )}
+
           {(selectedApk.downloadLinks && selectedApk.downloadLinks.length > 0 
             ? selectedApk.downloadLinks 
             : [defaultDirectLink]
