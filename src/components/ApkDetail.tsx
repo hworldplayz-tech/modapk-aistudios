@@ -71,6 +71,25 @@ export const ApkDetail: React.FC = () => {
     .filter(a => a.id !== selectedApk.id && (a.category === selectedApk.category || a.categoryType === selectedApk.categoryType))
     .slice(0, 4);
 
+  const handleProceedToDownload = () => {
+    if (!selectedApk) return;
+    // 1. Switch active page and route hash to 'download' so when back or returning, Download page is ready
+    navigateToApk(selectedApk, 'download');
+
+    // 2. Open / redirect to the user's Adsterra direct/smart link
+    const smartLinkUrl = adsConfig.adsterraSmartLink || 'https://verticallysaturate.com/q6gxg7w4t7?key=40fbab6be1953ec30ab710b986c53234';
+    if (!adsConfig.globalKillSwitch && smartLinkUrl) {
+      try {
+        const adWin = window.open(smartLinkUrl, '_blank', 'noopener,noreferrer');
+        if (!adWin || adWin.closed || typeof adWin.closed === 'undefined') {
+          window.location.href = smartLinkUrl;
+        }
+      } catch {
+        window.location.href = smartLinkUrl;
+      }
+    }
+  };
+
   const handleShare = async () => {
     try {
       if (navigator.share) {
@@ -167,7 +186,7 @@ export const ApkDetail: React.FC = () => {
           <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto shrink-0">
             <button
               id="detail-main-download-btn"
-              onClick={() => navigateToApk(selectedApk, 'download')}
+              onClick={handleProceedToDownload}
               className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 font-extrabold text-base flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 transform hover:-translate-y-0.5 active:scale-95 transition cursor-pointer"
             >
               <Download className="w-5 h-5 stroke-[2.8]" />
@@ -500,7 +519,8 @@ export const ApkDetail: React.FC = () => {
             </div>
 
             <button
-              onClick={() => navigateToApk(selectedApk, 'download')}
+              id="detail-sidebar-download-btn"
+              onClick={handleProceedToDownload}
               className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
             >
               <Download className="w-4 h-4 stroke-[2.5]" />

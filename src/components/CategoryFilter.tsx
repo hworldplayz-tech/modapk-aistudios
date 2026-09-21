@@ -32,62 +32,62 @@ export const CategoryFilter: React.FC = () => {
     <div id="category-filter-section" className="space-y-4 mb-8">
       
       {/* Top Filter & Sort Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-zinc-200 dark:border-zinc-800 w-full max-w-full">
         
         {/* Main Tab Switches */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 self-start">
+        <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 max-w-full overflow-x-auto scrollbar-none w-full sm:w-auto">
           <button
             onClick={() => { setFilterType('all'); setSelectedCategory('all'); }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${
               filterType === 'all'
                 ? 'bg-emerald-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
-            <Layers className="w-4 h-4" />
+            <Layers className="w-4 h-4 shrink-0" />
             All Mods ({apks.length})
           </button>
           
           <button
             onClick={() => { setFilterType('games'); setSelectedCategory('all'); }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${
               filterType === 'games'
                 ? 'bg-emerald-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
-            <Gamepad2 className="w-4 h-4" />
+            <Gamepad2 className="w-4 h-4 shrink-0" />
             Mod Games
           </button>
 
           <button
             onClick={() => { setFilterType('apps'); setSelectedCategory('all'); }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${
               filterType === 'apps'
                 ? 'bg-emerald-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
-            <Smartphone className="w-4 h-4" />
+            <Smartphone className="w-4 h-4 shrink-0" />
             Mod Apps
           </button>
 
           <button
             onClick={() => { setFilterType('trending'); setSelectedCategory('all'); }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0 whitespace-nowrap ${
               filterType === 'trending'
                 ? 'bg-emerald-500 text-zinc-950 shadow-sm'
                 : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
             }`}
           >
-            <Flame className="w-4 h-4 text-amber-500" />
+            <Flame className="w-4 h-4 text-amber-500 shrink-0" />
             Trending
           </button>
         </div>
 
         {/* Sort Selector */}
-        <div className="flex items-center gap-2 self-end sm:self-center">
-          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1 shrink-0">
             <ArrowUpDown className="w-3.5 h-3.5" /> Sort:
           </span>
           <select

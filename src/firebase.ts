@@ -200,7 +200,7 @@ export async function recordDownload(apkId: string): Promise<void> {
 // ==========================================
 // SMART ADS CONFIGURATION SYNC
 // ==========================================
-const ADS_STORAGE_KEY = 'modapks_ads_configuration_v1';
+const ADS_STORAGE_KEY = 'modapks_ads_configuration_v2';
 const SETTINGS_COLLECTION = 'settings';
 const ADS_DOC_ID = 'ads_configuration';
 
@@ -209,7 +209,7 @@ export function getLocalAdsConfig(): SiteAdsConfig {
     const cached = localStorage.getItem(ADS_STORAGE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
-      return { ...DEFAULT_ADS_CONFIG, ...parsed };
+      return { ...DEFAULT_ADS_CONFIG, ...parsed, demoMode: false };
     }
   } catch (e) {
     console.warn('Failed reading ads config from local storage:', e);

@@ -24,17 +24,19 @@ import { SmartAdSlot } from './SmartAdSlot';
 
 export const DownloadPage: React.FC = () => {
   const { selectedApk, setActivePage, recordApkDownload, showNotification, adsConfig } = useApp();
+  const [hasStartedProcess, setHasStartedProcess] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(5);
   const [isReady, setIsReady] = useState<boolean>(false);
   const [downloadStarted, setDownloadStarted] = useState<boolean>(false);
 
+  // Countdown only begins after user initiates download
   useEffect(() => {
     let timer: any;
-    if (countdown > 0) {
+    if (hasStartedProcess && countdown > 0 && !isReady) {
       timer = setTimeout(() => {
         setCountdown(prev => prev - 1);
       }, 1000);
-    } else {
+    } else if (hasStartedProcess && countdown === 0 && !isReady) {
       setIsReady(true);
       // Trigger subtle celebration confetti
       try {
@@ -46,7 +48,7 @@ export const DownloadPage: React.FC = () => {
       } catch {}
     }
     return () => clearTimeout(timer);
-  }, [countdown]);
+  }, [hasStartedProcess, countdown, isReady]);
 
   if (!selectedApk) {
     return (
@@ -61,6 +63,23 @@ export const DownloadPage: React.FC = () => {
       </div>
     );
   }
+
+  // Trigger Adsterra smart link and initiate countdown
+  const handleInitiateDownload = () => {
+    const smartLinkUrl = adsConfig.adsterraSmartLink || 'https://verticallysaturate.com/q6gxg7w4t7?key=40fbab6be1953ec30ab710b986c53234';
+    if (!adsConfig.globalKillSwitch && smartLinkUrl) {
+      try {
+        const adWin = window.open(smartLinkUrl, '_blank', 'noopener,noreferrer');
+        if (!adWin || adWin.closed || typeof adWin.closed === 'undefined') {
+          window.location.href = smartLinkUrl;
+        }
+      } catch {
+        window.location.href = smartLinkUrl;
+      }
+    }
+
+    setHasStartedProcess(true);
+  };
 
   const handleDownloadClick = (link: DownloadLink) => {
     recordApkDownload(selectedApk.id);
@@ -92,10 +111,10 @@ export const DownloadPage: React.FC = () => {
   };
 
   return (
-    <div id="download-page-container" className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20">
+    <div id="download-page-container" className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 w-full max-w-full overflow-hidden">
       
       {/* Top Header Smart Ad Slot */}
-      <SmartAdSlot slot={adsConfig.downloadPageTop} label="Sponsored Download Server" />
+      <SmartAdSlot slot={adsConfig.downloadPageTop} />
 
       {/* Back to Details */}
       <button 
@@ -131,9 +150,26 @@ export const DownloadPage: React.FC = () => {
             Version: <strong className="text-emerald-600 dark:text-emerald-400">{selectedApk.version}</strong> • Size: <strong>{selectedApk.size}</strong> • Modded by MODAPKs
           </p>
 
-          {/* Countdown or Ready State */}
+          {/* Download Control Area */}
           <div className="my-6 w-full max-w-md">
-            {!isReady ? (
+            
+            {/* Case 1: Initial state before user presses download */}
+            {!hasStartedProcess ? (
+              <div className="space-y-3">
+                <button
+                  id="initial-start-download-btn"
+                  onClick={handleInitiateDownload}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 font-black text-lg sm:text-xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/30 transform hover:-translate-y-1 active:scale-98 transition duration-200 cursor-pointer glow-emerald"
+                >
+                  <Download className="w-6 h-6 stroke-[3]" />
+                  <span>Download APK ({selectedApk.size})</span>
+                </button>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Fast direct high-speed download with zero malware and instant verification.
+                </p>
+              </div>
+            ) : !isReady ? (
+              /* Case 2: Countdown active after clicking download */
               <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-950/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
                 <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                   <Clock className="w-5 h-5 animate-spin" />
@@ -153,12 +189,13 @@ export const DownloadPage: React.FC = () => {
 
                 <button
                   onClick={() => setIsReady(true)}
-                  className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+                  className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-semibold cursor-pointer"
                 >
                   Skip timer & Download directly →
                 </button>
               </div>
             ) : (
+              /* Case 3: Link is generated and ready to download */
               <div className="space-y-4">
                 
                 {/* Primary Animated Download Button */}
@@ -168,7 +205,7 @@ export const DownloadPage: React.FC = () => {
                   className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 font-black text-lg sm:text-xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/30 transform hover:-translate-y-1 active:scale-98 transition duration-200 cursor-pointer glow-emerald"
                 >
                   <Download className="w-6 h-6 stroke-[3]" />
-                  <span>Download APK ({selectedApk.size})</span>
+                  <span>Download APK Now ({selectedApk.size})</span>
                 </button>
 
                 {downloadStarted && (
@@ -182,7 +219,7 @@ export const DownloadPage: React.FC = () => {
 
             {/* Smart Timer Ad Slot (Positioned directly below countdown/button, non-obtrusive) */}
             <div className="mt-4">
-              <SmartAdSlot slot={adsConfig.downloadPageTimer} label="Sponsored Ad" />
+              <SmartAdSlot slot={adsConfig.downloadPageTimer} />
             </div>
           </div>
 
@@ -215,7 +252,7 @@ export const DownloadPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs sm:text-sm font-bold text-zinc-100 flex items-center gap-1.5">
-                    <span>{adsConfig.smartLinkButtons.buttonLabel || '⚡ Fast Mirror CDN (Sponsored)'}</span>
+                    <span>{adsConfig.smartLinkButtons.buttonLabel || '⚡ Fast Mirror CDN (VIP Speed)'}</span>
                     <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
                       VIP SPEED
                     </span>

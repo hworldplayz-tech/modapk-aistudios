@@ -2,8 +2,8 @@ import { SiteAdsConfig } from '../types';
 
 export const DEFAULT_ADS_CONFIG: SiteAdsConfig = {
   globalKillSwitch: false, // Default: False (Ads are enabled by default, can be killed with 1 click)
-  demoMode: true, // In demo mode, if custom script code is empty, shows a clean Adsterra styled banner with dimension badge
-  adsterraSmartLink: 'https://www.profitablecpmrate.com/example_smartlink', // Default Adsterra SmartLink
+  demoMode: false, // False: Only display ads when actual ad code is added in Admin Panel
+  adsterraSmartLink: 'https://verticallysaturate.com/q6gxg7w4t7?key=40fbab6be1953ec30ab710b986c53234', // User Adsterra SmartLink
   headerBanner: {
     id: 'header-728x90',
     name: 'Top Header Banner',
@@ -74,8 +74,8 @@ export const DEFAULT_ADS_CONFIG: SiteAdsConfig = {
   },
   smartLinkButtons: {
     enabled: true,
-    buttonLabel: '⚡ Fast Mirror CDN (Sponsored)',
-    url: 'https://www.profitablecpmrate.com/example_smartlink'
+    buttonLabel: '⚡ Fast Mirror CDN (VIP Speed)',
+    url: 'https://verticallysaturate.com/q6gxg7w4t7?key=40fbab6be1953ec30ab710b986c53234'
   },
   updatedAt: new Date().toISOString().split('T')[0]
 };

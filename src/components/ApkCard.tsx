@@ -113,7 +113,11 @@ export const ApkCard: React.FC<ApkCardProps> = ({ apk }) => {
 
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => navigateToApk(apk, 'download')}
+            id={`apk-download-btn-${apk.id}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigateToApk(apk, 'detail');
+            }}
             className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-emerald-500/20 hover:scale-105 active:scale-95 transition cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 stroke-[2.5]" />

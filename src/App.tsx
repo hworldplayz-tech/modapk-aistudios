@@ -82,7 +82,7 @@ const MainContent: React.FC = () => {
   }, [apks, filterType, selectedCategory, searchQuery, sortOption]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-200">
+    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-200 w-full max-w-full overflow-x-hidden">
       
       {/* Toast Notification */}
       {notification && (
@@ -117,12 +117,12 @@ const MainContent: React.FC = () => {
       <SearchModal />
 
       {/* Main App Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 pb-16 overflow-x-hidden">
         
         {/* Global Top Header Banner (728x90) */}
         {activePage !== 'admin' && (
-          <div className="mb-4">
-            <SmartAdSlot slot={adsConfig.headerBanner} label="Sponsored Header" />
+          <div className="mb-2">
+            <SmartAdSlot slot={adsConfig.headerBanner} />
           </div>
         )}
 
@@ -135,8 +135,8 @@ const MainContent: React.FC = () => {
             <CategoryFilter />
 
             {/* In-Feed Ad Banner (300x250 or 468x60) */}
-            <div className="my-3">
-              <SmartAdSlot slot={adsConfig.inContentBanner} label="Recommended Sponsor" />
+            <div className="my-2">
+              <SmartAdSlot slot={adsConfig.inContentBanner} />
             </div>
 
             {/* Catalog Grid Header */}
