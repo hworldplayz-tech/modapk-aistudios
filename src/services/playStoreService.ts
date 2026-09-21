@@ -34,31 +34,33 @@ export function extractPackageId(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) return '';
 
-  // If it's a full Google Play URL: https://play.google.com/store/apps/details?id=com.spotify.music&hl=en
+  // 1. If it's a full Google Play URL: https://play.google.com/store/apps/details?id=com.spotify.music&hl=en
   const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_.]+)/);
   if (idMatch && idMatch[1]) {
     return idMatch[1];
   }
 
-  // If input is already just the package name (e.g. com.dts.freefireth)
+  // 2. If it's something like details?id=com.lemon.lvoverseas
+  const partialMatch = trimmed.match(/id=([a-zA-Z0-9_.]+)/);
+  if (partialMatch && partialMatch[1]) {
+    return partialMatch[1];
+  }
+
+  // 3. If input is already package name (e.g. com.lemon.lvoverseas or com.dts.freefireth)
   const clean = trimmed.replace(/^https?:\/\/[^/]+\//, '').replace(/[^a-zA-Z0-9_.]/g, '');
   return clean;
 }
 
 /**
- * Fetch HTML via multiple CORS-bypassing proxies
+ * Fetch HTML via multiple CORS-bypassing proxies as fallback
  */
 async function fetchPlayStoreHtml(packageId: string): Promise<string> {
   const targetUrl = `https://play.google.com/store/apps/details?id=${encodeURIComponent(packageId)}&hl=en&gl=US`;
 
   const proxies = [
-    // 1. AllOrigins raw
     `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-    // 2. Codetabs proxy
     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-    // 3. Corsproxy.io
     `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`,
-    // 4. AllOrigins JSON format
     `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`
   ];
 
@@ -94,14 +96,33 @@ async function fetchPlayStoreHtml(packageId: string): Promise<string> {
 }
 
 /**
- * Parse Play Store HTML and extract rich meta tags + AF_initDataCallback JSON
+ * Fetch Play Store metadata using the high-performance backend API route first,
+ * with multi-layer fallback to public CORS proxies.
  */
 export async function scrapePlayStoreMetadata(input: string): Promise<PlayStoreScrapedData> {
   const packageId = extractPackageId(input);
   if (!packageId) {
-    throw new Error('Please enter a valid Play Store Package ID (e.g. com.spotify.music) or URL.');
+    throw new Error('Please enter a valid Play Store Package ID (e.g. com.lemon.lvoverseas) or URL.');
   }
 
+  // LAYER 1: Ultra-fast Full-Stack Backend API (/api/scrape-playstore)
+  // Completely immune to browser CORS, handles direct server-side fetch with Chrome headers
+  try {
+    const backendRes = await fetch(`/api/scrape-playstore?id=${encodeURIComponent(packageId)}`);
+    if (backendRes.ok) {
+      const data = await backendRes.json();
+      if (data && data.title && !data.error) {
+        return data as PlayStoreScrapedData;
+      }
+    } else {
+      const errorJson = await backendRes.json().catch(() => null);
+      console.warn('Backend Play Store API warning:', errorJson?.error || backendRes.statusText);
+    }
+  } catch (err) {
+    console.warn('Backend API fetch attempted, falling back to public mirrors:', err);
+  }
+
+  // LAYER 2: Multi-Proxy Fallback (if running client-only preview or during deployment switches)
   const html = await fetchPlayStoreHtml(packageId);
 
   // Initialize defaults

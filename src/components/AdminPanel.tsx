@@ -794,8 +794,34 @@ service cloud.firestore {
                 </div>
 
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  Enter any Play Store package name (e.g. <code className="text-emerald-600 dark:text-emerald-300 font-mono font-bold">com.spotify.music</code> or <code className="text-emerald-600 dark:text-emerald-300 font-mono font-bold">com.dts.freefireth</code>) or full Play Store URL. We will extract all official titles, HD icons, screenshots, ratings, developer, and descriptions automatically.
+                  Enter any Play Store package name or full Play Store URL. The server directly extracts official titles, HD icons, screenshots, ratings, developer, and descriptions in seconds.
                 </p>
+
+                {/* Quick Try Package Chips */}
+                <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-zinc-500">
+                  <span className="font-semibold text-zinc-600 dark:text-zinc-400">Quick Test:</span>
+                  <button
+                    type="button"
+                    onClick={() => { setPlayStoreInput('com.lemon.lvoverseas'); }}
+                    className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-500 hover:text-zinc-950 font-mono transition"
+                  >
+                    com.lemon.lvoverseas (CapCut)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPlayStoreInput('com.spotify.music'); }}
+                    className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-500 hover:text-zinc-950 font-mono transition"
+                  >
+                    com.spotify.music
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPlayStoreInput('com.mojang.minecraftpe'); }}
+                    className="px-2 py-0.5 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-500 hover:text-zinc-950 font-mono transition"
+                  >
+                    com.mojang.minecraftpe
+                  </button>
+                </div>
 
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
