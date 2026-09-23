@@ -37,6 +37,7 @@ import { CATEGORIES_LIST, INITIAL_APKS } from '../data/initialApks';
 import { seedInitialApksToFirestore } from '../firebase';
 import { AdminAdsManager } from './AdminAdsManager';
 import { scrapePlayStoreMetadata, extractPackageId } from '../services/playStoreService';
+import { parseGoogleDriveUrl, getDirectDownloadUrl } from '../utils/driveHelpers';
 
 export const AdminPanel: React.FC = () => {
   const { 
@@ -297,7 +298,23 @@ export const AdminPanel: React.FC = () => {
 
   const handleUpdateDownloadLink = (index: number, field: keyof DownloadLink, value: any) => {
     const updated = [...formDownloadLinks];
-    updated[index] = { ...updated[index], [field]: value };
+    const targetLink = { ...updated[index], [field]: value };
+
+    // Auto-detect and convert Google Drive links on URL paste
+    if (field === 'url' && typeof value === 'string') {
+      const driveInfo = parseGoogleDriveUrl(value);
+      if (driveInfo.isDrive && driveInfo.directDownloadUrl) {
+        targetLink.url = driveInfo.directDownloadUrl;
+        targetLink.serverType = 'drive';
+        targetLink.isFastServer = true;
+        if (!targetLink.name || targetLink.name === 'Mirror Server' || targetLink.name === 'MODAPKs Fast CDN') {
+          targetLink.name = 'Google Drive Fast Direct CDN';
+        }
+        showNotification('Detected Google Drive link! Auto-converted to 1-click direct download.', 'success');
+      }
+    }
+
+    updated[index] = targetLink;
     setFormDownloadLinks(updated);
   };
 
@@ -1169,49 +1186,93 @@ service cloud.firestore {
               {/* Download Mirrors Builder */}
               <div className="space-y-3 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/70 border border-zinc-200 dark:border-zinc-800">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    APK Download Links & Mirrors ({formDownloadLinks.length})
-                  </label>
+                  <div>
+                    <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <HardDrive className="w-3.5 h-3.5 text-blue-500" />
+                      <span>APK Download Links & Mirrors ({formDownloadLinks.length})</span>
+                    </label>
+                    <p className="text-[11px] text-zinc-400">
+                      Supports direct URLs, Google Drive links (auto-converts to 1-click download), MediaFire, etc.
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={handleAddDownloadLink}
-                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 shrink-0"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Mirror Link
                   </button>
                 </div>
 
-                {formDownloadLinks.map((link, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Server #{idx + 1}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveDownloadLink(idx)}
-                        className="text-rose-500 hover:text-rose-600 p-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                {formDownloadLinks.map((link, idx) => {
+                  const driveInfo = parseGoogleDriveUrl(link.url);
+                  const isDrive = driveInfo.isDrive || link.serverType === 'drive';
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        placeholder="Server Name (e.g. MODAPKs High Speed CDN)"
-                        value={link.name}
-                        onChange={(e) => handleUpdateDownloadLink(idx, 'name', e.target.value)}
-                        className="text-xs px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
-                      />
-                      <input
-                        type="url"
-                        placeholder="Download URL (e.g. https://linksshare.online/dl/...)"
-                        value={link.url}
-                        onChange={(e) => handleUpdateDownloadLink(idx, 'url', e.target.value)}
-                        className="text-xs px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
-                      />
+                  return (
+                    <div key={idx} className="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                            Server #{idx + 1}
+                          </span>
+                          {isDrive && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Google Drive Direct Active
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <label className="flex items-center gap-1.5 text-[11px] text-zinc-500 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(link.isFastServer)}
+                              onChange={(e) => handleUpdateDownloadLink(idx, 'isFastServer', e.target.checked)}
+                              className="rounded text-emerald-500"
+                            />
+                            <span>Fast Server Tag</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDownloadLink(idx)}
+                            className="text-rose-500 hover:text-rose-600 p-1"
+                            title="Remove Mirror"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                        <div className="sm:col-span-5">
+                          <input
+                            type="text"
+                            placeholder="Server Name (e.g. Google Drive Direct CDN)"
+                            value={link.name}
+                            onChange={(e) => handleUpdateDownloadLink(idx, 'name', e.target.value)}
+                            className="w-full text-xs px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
+                          />
+                        </div>
+                        <div className="sm:col-span-7">
+                          <input
+                            type="text"
+                            placeholder="Paste Google Drive link or download URL..."
+                            value={link.url}
+                            onChange={(e) => handleUpdateDownloadLink(idx, 'url', e.target.value)}
+                            className="w-full text-xs px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {isDrive && driveInfo.fileId && (
+                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 bg-blue-50/50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-200/50 dark:border-blue-900/30 flex items-center justify-between">
+                          <span className="truncate">File ID: <code className="text-blue-600 dark:text-blue-400 font-mono">{driveInfo.fileId}</code></span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">Direct 1-Click Ready</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Featured / Trending Flags */}

@@ -21,6 +21,7 @@ import confetti from 'canvas-confetti';
 import { useApp } from '../context/AppContext';
 import { ApkItem, DownloadLink } from '../types';
 import { SmartAdSlot } from './SmartAdSlot';
+import { parseGoogleDriveUrl, getDirectDownloadUrl } from '../utils/driveHelpers';
 
 export const DownloadPage: React.FC = () => {
   const { selectedApk, setActivePage, recordApkDownload, showNotification, adsConfig } = useApp();
@@ -89,7 +90,16 @@ export const DownloadPage: React.FC = () => {
   const handleDownloadClick = (link: DownloadLink) => {
     recordApkDownload(selectedApk.id);
     setDownloadStarted(true);
-    showNotification(`Starting download: ${link.name}`, 'success');
+
+    const directTargetUrl = getDirectDownloadUrl(link.url);
+    const driveInfo = parseGoogleDriveUrl(link.url);
+
+    showNotification(
+      driveInfo.isDrive 
+        ? `Starting direct Google Drive download: ${link.name}`
+        : `Starting download: ${link.name}`, 
+      'success'
+    );
     
     // Confetti effect
     try {
@@ -100,9 +110,16 @@ export const DownloadPage: React.FC = () => {
       });
     } catch {}
 
-    // Open download in new tab or trigger link
+    // Open direct download URL in new tab / download trigger
     setTimeout(() => {
-      window.open(link.url, '_blank');
+      const a = document.createElement('a');
+      a.href = directTargetUrl;
+      a.download = `${selectedApk.slug}.apk`;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }, 400);
   };
 
@@ -283,39 +300,64 @@ export const DownloadPage: React.FC = () => {
           {(selectedApk.downloadLinks && selectedApk.downloadLinks.length > 0 
             ? selectedApk.downloadLinks 
             : [defaultDirectLink]
-          ).map((link, idx) => (
-            <div
-              key={link.id || idx}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition group"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
-                  #{idx + 1}
-                </div>
-                <div>
-                  <div className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                    <span>{link.name}</span>
-                    {link.isFastServer && (
-                      <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
-                        FASTEST
-                      </span>
+          ).map((link, idx) => {
+            const driveInfo = parseGoogleDriveUrl(link.url);
+            const isGdrive = link.serverType === 'drive' || driveInfo.isDrive;
+
+            return (
+              <div
+                key={link.id || idx}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                    isGdrive 
+                      ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' 
+                      : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                  }`}>
+                    {isGdrive ? (
+                      <HardDrive className="w-4 h-4 text-blue-500" />
+                    ) : (
+                      `#${idx + 1}`
                     )}
                   </div>
-                  <div className="text-[11px] text-zinc-400">
-                    {link.note || `Server Mirror • Size: ${link.size || selectedApk.size}`}
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 flex-wrap">
+                      <span>{link.name}</span>
+                      {isGdrive && (
+                        <span className="px-1.5 py-0.2 text-[9px] font-bold bg-blue-500 text-white rounded">
+                          GOOGLE DRIVE DIRECT
+                        </span>
+                      )}
+                      {link.isFastServer && (
+                        <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
+                          FASTEST
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-zinc-400 flex items-center gap-2">
+                      <span>{link.note || `Server Mirror • Size: ${link.size || selectedApk.size}`}</span>
+                      {isGdrive && (
+                        <span className="text-blue-500 dark:text-blue-400 font-semibold">• 1-Click Direct Download</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                onClick={() => handleDownloadClick(link)}
-                className="px-4 py-2 rounded-xl bg-zinc-900 dark:bg-zinc-800 hover:bg-emerald-500 dark:hover:bg-emerald-500 text-white hover:text-zinc-950 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download</span>
-              </button>
-            </div>
-          ))}
+                <button
+                  onClick={() => handleDownloadClick(link)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                    isGdrive
+                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
+                      : 'bg-zinc-900 dark:bg-zinc-800 hover:bg-emerald-500 dark:hover:bg-emerald-500 text-white hover:text-zinc-950'
+                  }`}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download</span>
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
