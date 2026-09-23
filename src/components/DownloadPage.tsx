@@ -15,13 +15,14 @@ import {
   Lock,
   RefreshCw,
   FolderDown,
-  Clock
+  Clock,
+  ShieldAlert
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../context/AppContext';
 import { ApkItem, DownloadLink } from '../types';
 import { SmartAdSlot } from './SmartAdSlot';
-import { parseGoogleDriveUrl, getDirectDownloadUrl } from '../utils/driveHelpers';
+import { parseGoogleDriveUrl, getDirectDownloadUrl, isDirectDownloadableUrl } from '../utils/driveHelpers';
 
 export const DownloadPage: React.FC = () => {
   const { selectedApk, setActivePage, navigateToApk, recordApkDownload, showNotification, adsConfig } = useApp();
@@ -29,27 +30,6 @@ export const DownloadPage: React.FC = () => {
   const [countdown, setCountdown] = useState<number>(5);
   const [isReady, setIsReady] = useState<boolean>(false);
   const [downloadStarted, setDownloadStarted] = useState<boolean>(false);
-
-  // Countdown only begins after user initiates download
-  useEffect(() => {
-    let timer: any;
-    if (hasStartedProcess && countdown > 0 && !isReady) {
-      timer = setTimeout(() => {
-        setCountdown(prev => prev - 1);
-      }, 1000);
-    } else if (hasStartedProcess && countdown === 0 && !isReady) {
-      setIsReady(true);
-      // Trigger subtle celebration confetti
-      try {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.6 }
-        });
-      } catch {}
-    }
-    return () => clearTimeout(timer);
-  }, [hasStartedProcess, countdown, isReady]);
 
   if (!selectedApk) {
     return (
@@ -98,39 +78,58 @@ export const DownloadPage: React.FC = () => {
     }
   };
 
-  const handleDownloadClick = (link: DownloadLink) => {
+  const handleDownloadClick = (link: DownloadLink, isAutoTrigger = false) => {
     recordApkDownload(selectedApk.id);
     setDownloadStarted(true);
 
     const directTargetUrl = getDirectDownloadUrl(link.url);
     const driveInfo = parseGoogleDriveUrl(link.url);
+    const isDirectFile = isDirectDownloadableUrl(directTargetUrl);
 
-    showNotification(
-      driveInfo.isDrive 
-        ? `Starting direct Google Drive download: ${link.name}`
-        : `Starting download: ${link.name}`, 
-      'success'
-    );
+    if (!isAutoTrigger) {
+      showNotification(
+        driveInfo.isDrive 
+          ? `Starting direct Google Drive download: ${link.name}`
+          : isDirectFile
+            ? `Starting direct APK download: ${link.name}`
+            : `Connecting to ${link.name}...`, 
+        'success'
+      );
+    }
     
     // Confetti effect
     try {
       confetti({
-        particleCount: 100,
+        particleCount: isAutoTrigger ? 70 : 100,
         spread: 80,
         origin: { y: 0.5 }
       });
     } catch {}
 
-    // Open direct download URL in new tab / download trigger
+    // Download trigger logic:
+    // If it is a direct APK/binary (like GitHub Releases, Catbox, direct .apk),
+    // trigger the download in the background via a hidden iframe so the user's browser stays on your site
+    // and DOES NOT navigate away to a blank github.com page or expose raw GitHub asset URLs!
     setTimeout(() => {
-      const a = document.createElement('a');
-      a.href = directTargetUrl;
-      a.download = `${selectedApk.slug}.apk`;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      if (isDirectFile) {
+        let hiddenIframe = document.getElementById('silent-apk-downloader') as HTMLIFrameElement;
+        if (!hiddenIframe) {
+          hiddenIframe = document.createElement('iframe');
+          hiddenIframe.id = 'silent-apk-downloader';
+          hiddenIframe.style.display = 'none';
+          document.body.appendChild(hiddenIframe);
+        }
+        hiddenIframe.src = directTargetUrl;
+      } else {
+        // Third-party landing pages (like Mega, Mediafire, Telegram) open in a new tab normally
+        const a = document.createElement('a');
+        a.href = directTargetUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     }, 400);
   };
 
@@ -145,6 +144,22 @@ export const DownloadPage: React.FC = () => {
         isFastServer: true,
         serverType: 'direct'
       };
+
+  // Countdown only begins after user initiates download
+  // When countdown hits 0, auto-trigger the primary download!
+  useEffect(() => {
+    let timer: any;
+    if (hasStartedProcess && countdown > 0 && !isReady) {
+      timer = setTimeout(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (hasStartedProcess && countdown === 0 && !isReady) {
+      setIsReady(true);
+      // Auto-trigger the download silently right on your page without leaving!
+      handleDownloadClick(primaryDownloadLink, true);
+    }
+    return () => clearTimeout(timer);
+  }, [hasStartedProcess, countdown, isReady, primaryDownloadLink]);
 
   // Remaining mirrors are all other links starting from index 1 (excluding primary)
   const additionalMirrors: DownloadLink[] = selectedApk.downloadLinks && selectedApk.downloadLinks.length > 1
@@ -259,9 +274,24 @@ export const DownloadPage: React.FC = () => {
                 </button>
 
                 {downloadStarted && (
-                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/40 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-2 animate-in fade-in">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>Your download has started! If it didn't start automatically, choose an alternative mirror below.</span>
+                  <div className="space-y-2 animate-in fade-in duration-300">
+                    <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/40 text-xs text-emerald-800 dark:text-emerald-200 flex items-center justify-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                      <span><strong>Download initiated!</strong> Check your browser downloads bar.</span>
+                    </div>
+
+                    {/* Helpful Android Browser Guidance Tip */}
+                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5 text-left">
+                      <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
+                      <div>
+                        <span className="font-bold block text-amber-800 dark:text-amber-300">
+                          Seeing "File might be harmful" prompt on your phone?
+                        </span>
+                        <span className="text-[11px] text-zinc-600 dark:text-zinc-300">
+                          This is a standard Android security message for all APKs installed outside Google Play. Simply tap <strong>"Download anyway"</strong> to install safely.
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

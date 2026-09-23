@@ -74,3 +74,28 @@ export function getDirectDownloadUrl(url: string): string {
   }
   return url;
 }
+
+/**
+ * Checks if a download URL is a direct APK file (like GitHub Releases, Catbox, direct CDN)
+ * vs a third-party hosted page (like Mega, Mediafire landing page, Telegram, etc.)
+ */
+export function isDirectDownloadableUrl(url: string): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  
+  // GitHub Releases assets
+  if (lower.includes('github.com') && lower.includes('/releases/download/')) return true;
+  if (lower.includes('objects.githubusercontent.com') || lower.includes('release-assets.githubusercontent.com')) return true;
+  
+  // Google Drive direct export
+  if (lower.includes('drive.google.com/uc') && lower.includes('export=download')) return true;
+
+  // Direct APK or binary file extensions
+  if (lower.includes('.apk') || lower.includes('.zip') || lower.includes('.xapk')) return true;
+
+  // Catbox / direct storage hosts
+  if (lower.includes('catbox.moe') || lower.includes('litterbox.catbox.moe')) return true;
+
+  return false;
+}
+
