@@ -66,19 +66,24 @@ export const DownloadPage: React.FC = () => {
 
   // Trigger Adsterra smart link and initiate countdown
   const handleInitiateDownload = () => {
+    // 1. Immediately activate countdown on current download page
+    setHasStartedProcess(true);
+
+    // 2. Open smart link / direct ad ONLY in a new tab, NEVER in current tab
     const smartLinkUrl = adsConfig.adsterraSmartLink || 'https://verticallysaturate.com/q6gxg7w4t7?key=40fbab6be1953ec30ab710b986c53234';
     if (!adsConfig.globalKillSwitch && smartLinkUrl) {
       try {
-        const adWin = window.open(smartLinkUrl, '_blank', 'noopener,noreferrer');
-        if (!adWin || adWin.closed || typeof adWin.closed === 'undefined') {
-          window.location.href = smartLinkUrl;
-        }
+        const link = document.createElement('a');
+        link.href = smartLinkUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } catch {
-        window.location.href = smartLinkUrl;
+        window.open(smartLinkUrl, '_blank', 'noopener,noreferrer');
       }
     }
-
-    setHasStartedProcess(true);
   };
 
   const handleDownloadClick = (link: DownloadLink) => {

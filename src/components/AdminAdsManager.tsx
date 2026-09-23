@@ -292,6 +292,19 @@ export const AdminAdsManager: React.FC = () => {
       {/* ==================================================== */}
       {activeAdTab === 'banners' && (
         <div className="space-y-5 animate-in fade-in duration-200">
+          <div className="p-4 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 flex items-center justify-between gap-4 text-xs">
+            <div className="space-y-0.5">
+              <span className="font-bold text-zinc-900 dark:text-zinc-100 block">
+                ⚡ Lightweight & High-Performance Display Banners
+              </span>
+              <p className="text-zinc-600 dark:text-zinc-400">
+                Configure your responsive website ad banners. Ad snippets are executed with isolated script guards to prevent desktop rendering lag.
+              </p>
+            </div>
+            <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
+              <Sparkles className="w-3.5 h-3.5" /> Lag-Free Engine Active
+            </div>
+          </div>
           
           {/* Header 728x90 */}
           <AdSlotEditorCard
@@ -585,17 +598,32 @@ const AdSlotEditorCard: React.FC<AdSlotEditorCardProps> = ({
   slot,
   onChange
 }) => {
+  const hasCode = Boolean(slot.code && slot.code.trim().length > 0);
+
   return (
     <div className="bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
               {title}
             </h4>
             <span className="text-[10px] font-mono font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded">
               {dimensions}
             </span>
+            {slot.enabled ? (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                hasCode 
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
+                  : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+              }`}>
+                {hasCode ? '● Script Active' : '○ Ready for Code'}
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-500">
+                Disabled
+              </span>
+            )}
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
             {description}
@@ -620,9 +648,11 @@ const AdSlotEditorCard: React.FC<AdSlotEditorCardProps> = ({
           <span className="flex items-center gap-1">
             <Code className="w-3.5 h-3.5 text-emerald-500" /> HTML / JavaScript Ad Snippet (Adsterra / AdSense code)
           </span>
-          <span className="text-[10px] text-zinc-400 font-normal">
-            Leave blank to use smart demo banner
-          </span>
+          {hasCode && (
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+              {slot.code.length} chars
+            </span>
+          )}
         </label>
         <textarea
           rows={3}

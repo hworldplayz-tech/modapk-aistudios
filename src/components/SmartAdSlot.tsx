@@ -14,6 +14,7 @@ export const SmartAdSlot: React.FC<SmartAdSlotProps> = ({
 }) => {
   const { adsConfig } = useApp();
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastRenderedCodeRef = useRef<string>('');
 
   // If global kill switch is ON, or slot is disabled, or no slot passed: render nothing
   if (adsConfig.globalKillSwitch || !slot || !slot.enabled) {
@@ -27,10 +28,12 @@ export const SmartAdSlot: React.FC<SmartAdSlotProps> = ({
     return null;
   }
 
-  // Inject and execute script safely when real snippet is provided in Admin
+  // Inject and execute script safely only when code changes
   useEffect(() => {
     if (!containerRef.current) return;
+    if (lastRenderedCodeRef.current === slot.code) return; // Skip re-executing unchanged ad scripts!
 
+    lastRenderedCodeRef.current = slot.code;
     const container = containerRef.current;
     container.innerHTML = ''; // Clear previous
 
@@ -64,10 +67,10 @@ export const SmartAdSlot: React.FC<SmartAdSlotProps> = ({
   }, [slot.code]);
 
   return (
-    <div className={`my-3 w-full flex items-center justify-center overflow-hidden max-w-full ${className}`}>
+    <div className={`my-2 w-full flex items-center justify-center overflow-hidden max-w-full contain-content ${className}`}>
       <div 
         ref={containerRef} 
-        className="w-full max-w-full flex items-center justify-center overflow-hidden"
+        className="w-full max-w-full flex items-center justify-center overflow-hidden min-h-[50px]"
       />
     </div>
   );

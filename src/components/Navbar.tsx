@@ -81,7 +81,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header id="main-header" className="sticky top-0 z-40 backdrop-blur-md bg-white/90 dark:bg-zinc-950/90 border-b border-zinc-200/80 dark:border-zinc-800/80 transition-colors">
+    <header id="main-header" className="sticky top-0 z-40 backdrop-blur-md bg-white/70 dark:bg-zinc-950/60 border-b border-zinc-200/50 dark:border-white/10 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           

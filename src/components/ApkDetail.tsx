@@ -77,16 +77,19 @@ export const ApkDetail: React.FC = () => {
     // 1. Switch active page and route hash to 'download' so when back or returning, Download page is ready
     navigateToApk(selectedApk, 'download');
 
-    // 2. Open / redirect to the user's Adsterra direct/smart link
+    // 2. Open the user's Adsterra direct/smart link ONLY in a new tab, never in the current tab
     const smartLinkUrl = adsConfig.adsterraSmartLink || 'https://verticallysaturate.com/q6gxg7w4t7?key=40fbab6be1953ec30ab710b986c53234';
     if (!adsConfig.globalKillSwitch && smartLinkUrl) {
       try {
-        const adWin = window.open(smartLinkUrl, '_blank', 'noopener,noreferrer');
-        if (!adWin || adWin.closed || typeof adWin.closed === 'undefined') {
-          window.location.href = smartLinkUrl;
-        }
+        const link = document.createElement('a');
+        link.href = smartLinkUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } catch {
-        window.location.href = smartLinkUrl;
+        window.open(smartLinkUrl, '_blank', 'noopener,noreferrer');
       }
     }
   };

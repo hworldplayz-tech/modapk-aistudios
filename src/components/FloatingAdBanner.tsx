@@ -6,6 +6,7 @@ export const FloatingAdBanner: React.FC = () => {
   const { adsConfig } = useApp();
   const [closed, setClosed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastCodeRef = useRef<string>('');
 
   const slot = adsConfig.floatingBottomBanner;
   const isKilled = adsConfig.globalKillSwitch;
@@ -15,7 +16,9 @@ export const FloatingAdBanner: React.FC = () => {
 
   useEffect(() => {
     if (!hasCustomCode || !containerRef.current || !slot.enabled || isKilled) return;
+    if (lastCodeRef.current === slot.code) return; // Prevent duplicate script re-execution lag
 
+    lastCodeRef.current = slot.code;
     const container = containerRef.current;
     container.innerHTML = '';
 
