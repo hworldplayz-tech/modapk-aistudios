@@ -9,6 +9,17 @@ async function startServer() {
   // JSON Body Parser
   app.use(express.json());
 
+  // CORS middleware so custom domains (like modapk.linksshare.online) can freely call backend APIs
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   // API Route: Google Play Store Metadata Scraper
   // Bypasses browser CORS completely by fetching directly from backend
   app.get('/api/scrape-playstore', async (req, res) => {
@@ -33,14 +44,19 @@ async function startServer() {
     const playStoreUrl = `https://play.google.com/store/apps/details?id=${encodeURIComponent(packageId)}&hl=en&gl=US`;
 
     try {
-      // Direct server-to-server fetch with realistic Chrome User-Agent
+      // Direct server-to-server fetch with realistic Chrome User-Agent and timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const response = await fetch(playStoreUrl, {
+        signal: controller.signal,
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9',
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8'
         }
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         return res.status(response.status).json({
