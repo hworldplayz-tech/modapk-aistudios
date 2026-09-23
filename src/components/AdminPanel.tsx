@@ -815,7 +815,7 @@ service cloud.firestore {
                 </div>
 
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                  Enter any Play Store package name or full Play Store URL. The server directly extracts official titles, HD icons, screenshots, ratings, developer, and descriptions in seconds.
+                  Enter any Play Store package name or full Play Store URL. The backend extracts official titles, HD icons, screenshots, ratings, developer, and descriptions in seconds and syncs straight to your live site via Firebase.
                 </p>
 
                 {/* Quick Try Package Chips */}

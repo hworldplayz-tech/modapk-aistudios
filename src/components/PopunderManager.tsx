@@ -21,22 +21,51 @@ export const PopunderManager: React.FC = () => {
     if (injectedRef.current) return;
 
     try {
+      const rawCode = pop.code.trim();
+
+      // If user pasted just a direct URL (e.g., //pl1234567.profitablecpmrate.com/... or https://...)
+      if ((rawCode.startsWith('http://') || rawCode.startsWith('https://') || rawCode.startsWith('//')) && !rawCode.includes('<script')) {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = rawCode;
+        script.async = true;
+        document.body.appendChild(script);
+        injectedRef.current = true;
+        if (pop.triggerOncePerSession) {
+          sessionStorage.setItem('modapks_popunder_fired', 'true');
+        }
+        return;
+      }
+
+      // Standard HTML script tag parsing
       const container = document.createElement('div');
       container.style.display = 'none';
       container.id = 'popunder-adsterra-container';
-      container.innerHTML = pop.code;
+      container.innerHTML = rawCode;
 
       const scripts = container.getElementsByTagName('script');
       const scriptList = Array.from(scripts);
 
-      scriptList.forEach((oldScript) => {
-        const newScript = document.createElement('script');
-        Array.from(oldScript.attributes).forEach((attr) => {
-          newScript.setAttribute(attr.name, attr.value);
+      if (scriptList.length === 0 && rawCode.includes('src=')) {
+        // Extract src attribute if present
+        const match = rawCode.match(/src=["'](.*?)["']/);
+        if (match && match[1]) {
+          const newScript = document.createElement('script');
+          newScript.type = 'text/javascript';
+          newScript.src = match[1];
+          newScript.async = true;
+          document.body.appendChild(newScript);
+        }
+      } else {
+        scriptList.forEach((oldScript) => {
+          const newScript = document.createElement('script');
+          Array.from(oldScript.attributes).forEach((attr) => {
+            newScript.setAttribute(attr.name, attr.value);
+          });
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
         });
-        newScript.textContent = oldScript.textContent;
-        document.body.appendChild(newScript);
-      });
+      }
 
       injectedRef.current = true;
       if (pop.triggerOncePerSession) {

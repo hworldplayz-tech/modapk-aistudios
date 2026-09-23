@@ -24,7 +24,7 @@ import { SmartAdSlot } from './SmartAdSlot';
 import { parseGoogleDriveUrl, getDirectDownloadUrl } from '../utils/driveHelpers';
 
 export const DownloadPage: React.FC = () => {
-  const { selectedApk, setActivePage, recordApkDownload, showNotification, adsConfig } = useApp();
+  const { selectedApk, setActivePage, navigateToApk, recordApkDownload, showNotification, adsConfig } = useApp();
   const [hasStartedProcess, setHasStartedProcess] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(5);
   const [isReady, setIsReady] = useState<boolean>(false);
@@ -140,7 +140,13 @@ export const DownloadPage: React.FC = () => {
 
       {/* Back to Details */}
       <button 
-        onClick={() => setActivePage('detail')}
+        onClick={() => {
+          if (selectedApk) {
+            navigateToApk(selectedApk, 'detail');
+          } else {
+            setActivePage('home');
+          }
+        }}
         className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 hover:text-emerald-500 flex items-center gap-1.5 cursor-pointer font-semibold"
       >
         <ArrowLeft className="w-4 h-4" /> Back to {selectedApk.title} Details
@@ -254,112 +260,111 @@ export const DownloadPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Alternative Mirrors & Fast CDN Servers */}
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Server className="w-5 h-5 text-emerald-500" />
-            Alternative High-Speed Mirrors ({selectedApk.downloadLinks?.length || 1})
-          </h3>
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">100% Free & No Ads</span>
-        </div>
+      {/* Alternative Mirrors & Fast CDN Servers (Displayed once countdown is completed) */}
+      {isReady && (
+        <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-4 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <Server className="w-5 h-5 text-emerald-500" />
+              Download Mirrors ({selectedApk.downloadLinks?.length || 1})
+            </h3>
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">100% Free & Fast</span>
+          </div>
 
-        <div className="space-y-2.5">
-          {/* Sponsored SmartLink Fast Mirror CDN (Non-intrusive, opens in new tab) */}
-          {!adsConfig.globalKillSwitch && adsConfig.smartLinkButtons.enabled && (
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/20 via-zinc-900 to-zinc-950 border border-emerald-500/40 hover:border-emerald-500 transition group shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black text-xs">
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div>
-                  <div className="text-xs sm:text-sm font-bold text-zinc-100 flex items-center gap-1.5">
-                    <span>{adsConfig.smartLinkButtons.buttonLabel || '⚡ Fast Mirror CDN (VIP Speed)'}</span>
-                    <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
-                      VIP SPEED
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-zinc-400">
-                    High Speed Direct Cloud • 0s Queue • Adsterra Partner Mirror
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href={adsConfig.smartLinkButtons.url || adsConfig.adsterraSmartLink || 'https://linksshare.online'}
-                target="_blank"
-                rel="noopener noreferrer nofollow"
-                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-black flex items-center gap-1.5 transition cursor-pointer shadow-sm"
-              >
-                <span>Fast Access</span>
-                <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
-              </a>
-            </div>
-          )}
-
-          {(selectedApk.downloadLinks && selectedApk.downloadLinks.length > 0 
-            ? selectedApk.downloadLinks 
-            : [defaultDirectLink]
-          ).map((link, idx) => {
-            const driveInfo = parseGoogleDriveUrl(link.url);
-            const isGdrive = link.serverType === 'drive' || driveInfo.isDrive;
-
-            return (
-              <div
-                key={link.id || idx}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition group"
-              >
+          <div className="space-y-2.5">
+            {/* Sponsored SmartLink Fast Mirror CDN (Non-intrusive, opens in new tab) */}
+            {!adsConfig.globalKillSwitch && adsConfig.smartLinkButtons.enabled && (
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-emerald-500/30 hover:border-emerald-500 transition group shadow-xs">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
-                    isGdrive 
-                      ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' 
-                      : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
-                  }`}>
-                    {isGdrive ? (
-                      <HardDrive className="w-4 h-4 text-blue-500" />
-                    ) : (
-                      `#${idx + 1}`
-                    )}
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold text-xs">
+                    <Sparkles className="w-4 h-4 text-emerald-500" />
                   </div>
                   <div>
-                    <div className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 flex-wrap">
-                      <span>{link.name}</span>
-                      {isGdrive && (
-                        <span className="px-1.5 py-0.2 text-[9px] font-bold bg-blue-500 text-white rounded">
-                          GOOGLE DRIVE DIRECT
-                        </span>
-                      )}
-                      {link.isFastServer && (
-                        <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
-                          FASTEST
-                        </span>
-                      )}
+                    <div className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                      <span>{adsConfig.smartLinkButtons.buttonLabel || '⚡ Fast Mirror CDN'}</span>
+                      <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
+                        VIP
+                      </span>
                     </div>
-                    <div className="text-[11px] text-zinc-400 flex items-center gap-2">
-                      <span>{link.note || `Server Mirror • Size: ${link.size || selectedApk.size}`}</span>
-                      {isGdrive && (
-                        <span className="text-blue-500 dark:text-blue-400 font-semibold">• 1-Click Direct Download</span>
-                      )}
+                    <div className="text-[11px] text-zinc-400">
+                      High Speed Direct Cloud Server
                     </div>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleDownloadClick(link)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                    isGdrive
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
-                      : 'bg-zinc-900 dark:bg-zinc-800 hover:bg-emerald-500 dark:hover:bg-emerald-500 text-white hover:text-zinc-950'
-                  }`}
+                <a
+                  href={adsConfig.smartLinkButtons.url || adsConfig.adsterraSmartLink || 'https://linksshare.online'}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
                 >
-                  <Download className="w-3.5 h-3.5" />
                   <span>Download</span>
-                </button>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
               </div>
-            );
-          })}
+            )}
+
+            {(selectedApk.downloadLinks && selectedApk.downloadLinks.length > 0 
+              ? selectedApk.downloadLinks 
+              : [defaultDirectLink]
+            ).map((link, idx) => {
+              const driveInfo = parseGoogleDriveUrl(link.url);
+              const isGdrive = link.serverType === 'drive' || driveInfo.isDrive;
+
+              return (
+                <div
+                  key={link.id || idx}
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                      isGdrive 
+                        ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' 
+                        : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400'
+                    }`}>
+                      {isGdrive ? (
+                        <HardDrive className="w-4 h-4 text-blue-500" />
+                      ) : (
+                        `#${idx + 1}`
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 flex-wrap">
+                        <span>{isGdrive && !link.name.toLowerCase().includes('google drive') ? 'Google Drive Server' : link.name}</span>
+                        {isGdrive && (
+                          <span className="px-1.5 py-0.2 text-[9px] font-bold bg-blue-500 text-white rounded">
+                            GOOGLE DRIVE
+                          </span>
+                        )}
+                        {link.isFastServer && (
+                          <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-500 text-zinc-950 rounded">
+                            FAST
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-zinc-400">
+                        <span>{link.size || selectedApk.size}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleDownloadClick(link)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                      isGdrive
+                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
+                        : 'bg-zinc-900 dark:bg-zinc-800 hover:bg-emerald-500 dark:hover:bg-emerald-500 text-white hover:text-zinc-950'
+                    }`}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Step by Step How to Install Guide */}
       <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-6">

@@ -410,8 +410,11 @@ export const AdminAdsManager: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-              <Code className="w-3.5 h-3.5 text-emerald-500" /> Popunder JavaScript Code Snippet
+            <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Code className="w-3.5 h-3.5 text-emerald-500" /> Adsterra Popunder Script or Direct URL
+              </span>
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Supports script tags, raw JS or //link URLs</span>
             </label>
             <textarea
               rows={4}
@@ -420,9 +423,12 @@ export const AdminAdsManager: React.FC = () => {
                 ...p,
                 popunder: { ...p.popunder, code: e.target.value }
               }))}
-              placeholder="<!-- Paste Adsterra popunder script here -->"
+              placeholder={`<!-- Paste your Adsterra popunder code here. Examples: -->\n<script type="text/javascript" src="//pl12345678.profitablecpmrate.com/ab/cd/ef/abcdef.js"></script>\n<!-- OR simply paste the JS URL directly -->`}
               className="w-full text-xs font-mono p-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
+            <p className="text-[11px] text-zinc-400">
+              💡 Tip: From your Adsterra Publisher Dashboard, copy the Popunder code snippet and paste it directly above. Toggle the switch to ON and click <strong>Save All Ad Settings</strong>.
+            </p>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">

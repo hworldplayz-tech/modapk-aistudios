@@ -50,31 +50,26 @@ export const Navbar: React.FC = () => {
       setSelectedCategory('all');
       setActivePage('home');
       try {
-        window.location.hash = '#games';
+        window.history.pushState(null, '', '/games');
       } catch {}
     } else if (page === 'apps') {
       setFilterType('apps');
       setSelectedCategory('all');
       setActivePage('home');
       try {
-        window.location.hash = '#apps';
+        window.history.pushState(null, '', '/apps');
       } catch {}
     } else if (page === 'trending') {
       setFilterType('trending');
       setSelectedCategory('all');
       setActivePage('home');
       try {
-        window.location.hash = '#trending';
+        window.history.pushState(null, '', '/trending');
       } catch {}
     } else if (page === 'favorites') {
       setActivePage('favorites');
       try {
-        // If current path is /admin, updating hash to #favorites should also be pushed cleanly
-        if (window.location.pathname.startsWith('/admin')) {
-          window.history.pushState(null, '', '/#favorites');
-        } else {
-          window.location.hash = '#favorites';
-        }
+        window.history.pushState(null, '', '/favorites');
       } catch {}
     }
     setMobileMenuOpen(false);

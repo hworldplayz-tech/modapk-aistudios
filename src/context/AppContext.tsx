@@ -66,7 +66,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [apks, setApks] = useState<ApkItem[]>(() => getLocalApks());
   const [loading, setLoading] = useState<boolean>(true);
   const [dbSource, setDbSource] = useState<'firestore' | 'local'>('local');
-  const [activePage, setActivePage] = useState<ViewPage>('home');
+  const [activePageState, setActivePageState] = useState<ViewPage>('home');
+
+  const setActivePage = useCallback((page: ViewPage) => {
+    setActivePageState(page);
+    try {
+      if (page === 'home') {
+        if (window.location.pathname !== '/' || window.location.hash) {
+          window.history.pushState(null, '', '/');
+        }
+      } else if (['games', 'apps', 'trending', 'favorites', 'about', 'contact', 'privacy', 'dmca', 'admin'].includes(page)) {
+        if (window.location.pathname !== `/${page}`) {
+          window.history.pushState(null, '', `/${page}`);
+        }
+      }
+    } catch {}
+  }, []);
   const [selectedApk, setSelectedApk] = useState<ApkItem | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -130,62 +145,63 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadAppData();
   }, [loadAppData]);
 
-  // Handle URL path / hash navigation for /admin, /games, /apps, /about, #admin, etc.
+  // Handle URL path / hash navigation for /admin, /games, /apps, /about, /apk/..., /download/..., etc.
   useEffect(() => {
     const handleUrlChange = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
-      // 1. Explicit hash checks first (takes precedence so clicking Favorites from /admin works!)
-      if (hash === '#favorites' || hash === '#/favorites' || path === '/favorites') {
+      // 1. Explicit static pages & categories
+      if (path === '/favorites' || hash === '#favorites' || hash === '#/favorites') {
         setActivePage('favorites');
         return;
       }
-      if (hash === '#games' || hash === '#/games' || path === '/games') {
+      if (path === '/games' || hash === '#games' || hash === '#/games') {
         setFilterType('games');
         setSelectedCategory('all');
         setActivePage('home');
         return;
       }
-      if (hash === '#apps' || hash === '#/apps' || path === '/apps') {
+      if (path === '/apps' || hash === '#apps' || hash === '#/apps') {
         setFilterType('apps');
         setSelectedCategory('all');
         setActivePage('home');
         return;
       }
-      if (hash === '#trending' || hash === '#/trending' || path === '/trending') {
+      if (path === '/trending' || hash === '#trending' || hash === '#/trending') {
         setFilterType('trending');
         setSelectedCategory('all');
         setActivePage('home');
         return;
       }
-      if (hash === '#about' || hash === '#/about' || path === '/about') {
+      if (path === '/about' || hash === '#about' || hash === '#/about') {
         setActivePage('about');
         return;
       }
-      if (hash === '#contact' || hash === '#/contact' || path === '/contact') {
+      if (path === '/contact' || hash === '#contact' || hash === '#/contact') {
         setActivePage('contact');
         return;
       }
-      if (hash === '#privacy' || hash === '#/privacy' || path === '/privacy') {
+      if (path === '/privacy' || hash === '#privacy' || hash === '#/privacy') {
         setActivePage('privacy');
         return;
       }
-      if (hash === '#dmca' || hash === '#/dmca' || path === '/dmca') {
+      if (path === '/dmca' || hash === '#dmca' || hash === '#/dmca') {
         setActivePage('dmca');
         return;
       }
 
-      // 2. Direct admin check (e.g. mysite.com/admin or #admin)
+      // 2. Direct admin check (e.g. /admin or #admin)
       if (path === '/admin' || path.startsWith('/admin/') || hash === '#admin' || hash === '#/admin') {
         setActivePage('admin');
         return;
       }
 
-      // 3. Deep link to APK detail or download (e.g. /apk/spotify-mod or /download/spotify-mod or #/apk/spotify-mod)
+      // 3. Separate clean pages for each app: Detail Page (/apk/:slug) and Download Page (/download/:slug)
       let matchedSlug = '';
       let isDownload = false;
 
+      // Check clean path first (e.g. /apk/youtube-mod or /download/youtube-mod)
       if (path.startsWith('/apk/')) {
         matchedSlug = path.replace('/apk/', '').replace(/\/$/, '');
       } else if (path.startsWith('/download/')) {
@@ -199,11 +215,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       if (matchedSlug) {
-        const found = apks.find(a => a.slug === matchedSlug || a.id === matchedSlug);
+        const found = apks.find(a => a.slug.toLowerCase() === matchedSlug.toLowerCase() || a.id.toLowerCase() === matchedSlug.toLowerCase());
         if (found) {
           setSelectedApk(found);
           setActivePage(isDownload ? 'download' : 'detail');
+          return;
         }
+      }
+
+      if (path === '/' && (!hash || hash === '#' || hash === '#/')) {
+        setActivePage('home');
       }
     };
 
@@ -241,8 +262,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivePage(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     try {
-      const targetHash = target === 'download' ? `#/download/${apk.slug}` : `#/apk/${apk.slug}`;
-      window.location.hash = targetHash;
+      const cleanPath = target === 'download' ? `/download/${apk.slug}` : `/apk/${apk.slug}`;
+      window.history.pushState({ apkId: apk.id, target }, '', cleanPath);
+      // Sync document title
+      document.title = `${apk.title} ${target === 'download' ? 'Download' : 'MOD APK'} - MODAPKs`;
     } catch {}
   };
 
@@ -391,19 +414,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         apks,
         loading,
-        activePage,
+        activePage: activePageState,
         setActivePage: (p) => {
           setActivePage(p);
           window.scrollTo({ top: 0, behavior: 'smooth' });
-          try {
-            if (p === 'admin') {
-              window.location.hash = '#admin';
-            } else if (p === 'home') {
-              window.location.hash = '';
-            } else if (p !== 'detail' && p !== 'download') {
-              window.location.hash = `#${p}`;
-            }
-          } catch {}
         },
         selectedApk,
         setSelectedApk,
