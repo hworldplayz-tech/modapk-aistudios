@@ -87,6 +87,17 @@ export const DownloadPage: React.FC = () => {
     }
   };
 
+  const isProtected = adsConfig.linkProtectionEnabled !== false;
+
+  // Handle link protection (prevent right-click context menu, long-press inspection, drag)
+  const handleProtectedContext = (e: React.MouseEvent | React.TouchEvent) => {
+    if (isProtected) {
+      e.preventDefault();
+      showNotification('🔒 Link is protected: Direct copying is disabled for security.', 'info');
+      return false;
+    }
+  };
+
   const handleDownloadClick = (link: DownloadLink) => {
     recordApkDownload(selectedApk.id);
     setDownloadStarted(true);
@@ -123,14 +134,22 @@ export const DownloadPage: React.FC = () => {
     }, 400);
   };
 
-  const defaultDirectLink: DownloadLink = selectedApk.downloadLinks?.[0] || {
-    id: 'def-link',
-    name: 'MODAPKs Ultra Fast Direct CDN',
-    url: `https://linksshare.online/dl/${selectedApk.slug}.apk`,
-    size: selectedApk.size,
-    isFastServer: true,
-    serverType: 'direct'
-  };
+  // Primary download link is ALWAYS the first link in the list (or fallback default)
+  const primaryDownloadLink: DownloadLink = selectedApk.downloadLinks && selectedApk.downloadLinks.length > 0
+    ? selectedApk.downloadLinks[0]
+    : {
+        id: 'def-link',
+        name: 'Fast Server',
+        url: `https://linksshare.online/dl/${selectedApk.slug}.apk`,
+        size: selectedApk.size,
+        isFastServer: true,
+        serverType: 'direct'
+      };
+
+  // Remaining mirrors are all other links starting from index 1 (excluding primary)
+  const additionalMirrors: DownloadLink[] = selectedApk.downloadLinks && selectedApk.downloadLinks.length > 1
+    ? selectedApk.downloadLinks.slice(1)
+    : [];
 
   return (
     <div id="download-page-container" className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300 pb-20 w-full max-w-full overflow-hidden">
@@ -229,8 +248,11 @@ export const DownloadPage: React.FC = () => {
                 {/* Primary Animated Download Button */}
                 <button
                   id="primary-direct-download-btn"
-                  onClick={() => handleDownloadClick(defaultDirectLink)}
-                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 font-black text-lg sm:text-xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/30 transform hover:-translate-y-1 active:scale-98 transition duration-200 cursor-pointer glow-emerald"
+                  onClick={() => handleDownloadClick(primaryDownloadLink)}
+                  onContextMenu={handleProtectedContext}
+                  className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 font-black text-lg sm:text-xl flex items-center justify-center gap-3 shadow-xl shadow-emerald-500/30 transform hover:-translate-y-1 active:scale-98 transition duration-200 cursor-pointer glow-emerald select-none"
+                  style={{ WebkitTouchCallout: isProtected ? 'none' : 'default', WebkitUserSelect: isProtected ? 'none' : 'auto' }}
+                  title="Direct Download APK"
                 >
                   <Download className="w-6 h-6 stroke-[3]" />
                   <span>Download APK Now ({selectedApk.size})</span>
@@ -239,7 +261,7 @@ export const DownloadPage: React.FC = () => {
                 {downloadStarted && (
                   <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/40 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-center gap-2 animate-in fade-in">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span>Your download has started! If it didn't start automatically, choose a mirror below.</span>
+                    <span>Your download has started! If it didn't start automatically, choose an alternative mirror below.</span>
                   </div>
                 )}
               </div>
@@ -260,13 +282,13 @@ export const DownloadPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Alternative Mirrors & Fast CDN Servers (Displayed once countdown is completed) */}
-      {isReady && (
+      {/* Alternative Mirrors & Fast CDN Servers (Displayed once countdown is completed, showing mirrors without duplicating primary) */}
+      {isReady && additionalMirrors.length > 0 && (
         <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 sm:p-8 border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-4 animate-in fade-in duration-300">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               <Server className="w-5 h-5 text-emerald-500" />
-              Download Mirrors ({selectedApk.downloadLinks?.length || 1})
+              Alternative Mirrors ({additionalMirrors.length})
             </h3>
             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">100% Free & Fast</span>
           </div>
@@ -304,17 +326,24 @@ export const DownloadPage: React.FC = () => {
               </div>
             )}
 
-            {(selectedApk.downloadLinks && selectedApk.downloadLinks.length > 0 
-              ? selectedApk.downloadLinks 
-              : [defaultDirectLink]
-            ).map((link, idx) => {
+            {additionalMirrors.map((link, idx) => {
               const driveInfo = parseGoogleDriveUrl(link.url);
               const isGdrive = link.serverType === 'drive' || driveInfo.isDrive;
+              const mirrorServerNumber = idx + 2; // Server 2, Server 3...
+
+              // Fallback friendly display name if empty or generic
+              const displayName = link.name && link.name !== 'Mirror Server'
+                ? link.name
+                : isGdrive
+                  ? `Server ${mirrorServerNumber} (Google Drive)`
+                  : `Server ${mirrorServerNumber}`;
 
               return (
                 <div
                   key={link.id || idx}
-                  className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition group"
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500/60 transition group select-none"
+                  onContextMenu={handleProtectedContext}
+                  style={{ WebkitTouchCallout: isProtected ? 'none' : 'default', WebkitUserSelect: isProtected ? 'none' : 'auto' }}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
@@ -325,12 +354,12 @@ export const DownloadPage: React.FC = () => {
                       {isGdrive ? (
                         <HardDrive className="w-4 h-4 text-blue-500" />
                       ) : (
-                        `#${idx + 1}`
+                        `#${mirrorServerNumber}`
                       )}
                     </div>
                     <div>
                       <div className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 flex-wrap">
-                        <span>{isGdrive && !link.name.toLowerCase().includes('google drive') ? 'Google Drive Server' : link.name}</span>
+                        <span>{displayName}</span>
                         {isGdrive && (
                           <span className="px-1.5 py-0.2 text-[9px] font-bold bg-blue-500 text-white rounded">
                             GOOGLE DRIVE
@@ -350,7 +379,8 @@ export const DownloadPage: React.FC = () => {
 
                   <button
                     onClick={() => handleDownloadClick(link)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                    onContextMenu={handleProtectedContext}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer select-none ${
                       isGdrive
                         ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-xs'
                         : 'bg-zinc-900 dark:bg-zinc-800 hover:bg-emerald-500 dark:hover:bg-emerald-500 text-white hover:text-zinc-950'

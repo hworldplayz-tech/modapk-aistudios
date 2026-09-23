@@ -106,6 +106,7 @@ export interface SiteAdsConfig {
     buttonLabel: string;
     url: string;
   };
+  linkProtectionEnabled?: boolean; // Protect download links against right-click, long-press inspection, and direct URL copying
   updatedAt?: string;
 }
 

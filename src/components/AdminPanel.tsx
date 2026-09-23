@@ -124,7 +124,7 @@ export const AdminPanel: React.FC = () => {
     setFormDownloadLinks([
       {
         id: 'dl-1',
-        name: 'MODAPKs High Speed CDN',
+        name: 'Fast Server',
         url: 'https://linksshare.online/dl/app.apk',
         size: '75.0 MB',
         isFastServer: true,
@@ -167,7 +167,7 @@ export const AdminPanel: React.FC = () => {
     setFormDownloadLinks(apk.downloadLinks?.length ? apk.downloadLinks : [
       {
         id: 'dl-1',
-        name: 'MODAPKs Direct Server',
+        name: 'Fast Server',
         url: `https://linksshare.online/dl/${apk.slug}.apk`,
         size: apk.size,
         isFastServer: true,
@@ -236,7 +236,7 @@ export const AdminPanel: React.FC = () => {
       setFormDownloadLinks([
         {
           id: 'dl-1',
-          name: `${data.title} VIP Mod (Fast Server)`,
+          name: 'Fast Server',
           url: `https://linksshare.online/dl/${generatedSlug}.apk`,
           size: data.size,
           isFastServer: true,
@@ -283,14 +283,16 @@ export const AdminPanel: React.FC = () => {
   };
 
   const handleAddDownloadLink = () => {
+    const nextServerIndex = formDownloadLinks.length + 1;
+    const defaultServerName = nextServerIndex === 1 ? 'Fast Server' : `Server ${nextServerIndex}`;
     setFormDownloadLinks([
       ...formDownloadLinks,
       {
         id: `dl-${Date.now()}`,
-        name: 'Mirror Server',
-        url: 'https://linksshare.online/dl/',
+        name: defaultServerName,
+        url: '',
         size: formSize,
-        isFastServer: false,
+        isFastServer: nextServerIndex === 1,
         serverType: 'direct'
       }
     ]);
@@ -306,9 +308,9 @@ export const AdminPanel: React.FC = () => {
       if (driveInfo.isDrive && driveInfo.directDownloadUrl) {
         targetLink.url = driveInfo.directDownloadUrl;
         targetLink.serverType = 'drive';
-        targetLink.isFastServer = true;
+        // Keep name as Fast Server (if index 0) or Server N unless user typed a custom one
         if (!targetLink.name || targetLink.name === 'Mirror Server' || targetLink.name === 'MODAPKs Fast CDN') {
-          targetLink.name = 'Google Drive Fast Direct CDN';
+          targetLink.name = index === 0 ? 'Fast Server' : `Server ${index + 1}`;
         }
         showNotification('Detected Google Drive link! Auto-converted to 1-click direct download.', 'success');
       }
@@ -1193,18 +1195,18 @@ service cloud.firestore {
                   <div>
                     <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                       <HardDrive className="w-3.5 h-3.5 text-blue-500" />
-                      <span>APK Download Links & Mirrors ({formDownloadLinks.length})</span>
+                      <span>Download Links & Host Servers ({formDownloadLinks.length})</span>
                     </label>
                     <p className="text-[11px] text-zinc-400">
-                      Supports direct URLs, Google Drive links (auto-converts to 1-click download), MediaFire, etc.
+                      Link #1 is your <strong>Primary Fast Server</strong> (GitHub Releases, Direct Host, GDrive, Mega, etc.). Extra links appear as <strong>Server 2, Server 3...</strong> mirrors.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleAddDownloadLink}
-                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 shrink-0"
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Mirror Link
+                    <Plus className="w-3.5 h-3.5" /> Add Mirror Server
                   </button>
                 </div>
 
@@ -1216,8 +1218,12 @@ service cloud.firestore {
                     <div key={idx} className="p-3.5 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                            Server #{idx + 1}
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                            idx === 0 
+                              ? 'bg-emerald-500 text-zinc-950 font-black' 
+                              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                          }`}>
+                            {idx === 0 ? 'Primary Link (Fast Server)' : `Mirror Server #${idx + 1}`}
                           </span>
                           {isDrive && (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center gap-1">
@@ -1236,31 +1242,33 @@ service cloud.firestore {
                             />
                             <span>Fast Server Tag</span>
                           </label>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDownloadLink(idx)}
-                            className="text-rose-500 hover:text-rose-600 p-1"
-                            title="Remove Mirror"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {formDownloadLinks.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDownloadLink(idx)}
+                              className="text-rose-500 hover:text-rose-600 p-1 cursor-pointer"
+                              title="Remove Mirror"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-                        <div className="sm:col-span-5">
+                        <div className="sm:col-span-4">
                           <input
                             type="text"
-                            placeholder="Server Name (e.g. Google Drive Direct CDN)"
+                            placeholder={idx === 0 ? 'Fast Server' : `Server ${idx + 1}`}
                             value={link.name}
                             onChange={(e) => handleUpdateDownloadLink(idx, 'name', e.target.value)}
                             className="w-full text-xs px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800"
                           />
                         </div>
-                        <div className="sm:col-span-7">
+                        <div className="sm:col-span-8">
                           <input
                             type="text"
-                            placeholder="Paste Google Drive link or download URL..."
+                            placeholder="Paste GitHub release URL, GDrive, Mega, or direct APK link..."
                             value={link.url}
                             onChange={(e) => handleUpdateDownloadLink(idx, 'url', e.target.value)}
                             className="w-full text-xs px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 font-mono"

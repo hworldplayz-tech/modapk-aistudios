@@ -72,6 +72,16 @@ export const ApkDetail: React.FC = () => {
     .filter(a => a.id !== selectedApk.id && (a.category === selectedApk.category || a.categoryType === selectedApk.categoryType))
     .slice(0, 4);
 
+  const isProtected = adsConfig.linkProtectionEnabled !== false;
+
+  const handleProtectedContext = (e: React.MouseEvent | React.TouchEvent) => {
+    if (isProtected) {
+      e.preventDefault();
+      showNotification('🔒 Link is protected: Direct copying is disabled for security.', 'info');
+      return false;
+    }
+  };
+
   const handleProceedToDownload = () => {
     if (!selectedApk) return;
     // 1. Switch active page and route hash to 'download' so when back or returning, Download page is ready
@@ -191,7 +201,9 @@ export const ApkDetail: React.FC = () => {
             <button
               id="detail-main-download-btn"
               onClick={handleProceedToDownload}
-              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 font-extrabold text-base flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 transform hover:-translate-y-0.5 active:scale-95 transition cursor-pointer"
+              onContextMenu={handleProtectedContext}
+              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-zinc-950 font-extrabold text-base flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 transform hover:-translate-y-0.5 active:scale-95 transition cursor-pointer select-none"
+              style={{ WebkitTouchCallout: isProtected ? 'none' : 'default', WebkitUserSelect: isProtected ? 'none' : 'auto' }}
             >
               <Download className="w-5 h-5 stroke-[2.8]" />
               <span>Download APK ({selectedApk.size})</span>
@@ -525,7 +537,9 @@ export const ApkDetail: React.FC = () => {
             <button
               id="detail-sidebar-download-btn"
               onClick={handleProceedToDownload}
-              className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
+              onContextMenu={handleProtectedContext}
+              className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer select-none"
+              style={{ WebkitTouchCallout: isProtected ? 'none' : 'default', WebkitUserSelect: isProtected ? 'none' : 'auto' }}
             >
               <Download className="w-4 h-4 stroke-[2.5]" />
               <span>Go to Download Page</span>

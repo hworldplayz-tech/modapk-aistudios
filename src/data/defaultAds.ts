@@ -77,5 +77,6 @@ export const DEFAULT_ADS_CONFIG: SiteAdsConfig = {
     buttonLabel: '⚡ Fast Mirror CDN (VIP Speed)',
     url: 'https://verticallysaturate.com/q6gxg7w4t7?key=40fbab6be1953ec30ab710b986c53234'
   },
+  linkProtectionEnabled: true, // Default ON: Protects download buttons from long-press copying and exposes only secure trigger
   updatedAt: new Date().toISOString().split('T')[0]
 };

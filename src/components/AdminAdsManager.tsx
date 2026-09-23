@@ -20,7 +20,9 @@ import {
   FileCode,
   RefreshCw,
   HelpCircle,
-  Database
+  Database,
+  Lock,
+  Shield
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SiteAdsConfig, AdSlotConfig } from '../types';
@@ -264,7 +266,7 @@ export const AdminAdsManager: React.FC = () => {
       </div>
 
       {/* Global General Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-zinc-900 p-5 rounded-3xl border border-zinc-200 dark:border-zinc-800">
         <div>
           <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 mb-1.5">
             <Link2 className="w-3.5 h-3.5 text-emerald-500" /> Default Adsterra SmartLink Direct URL
@@ -283,16 +285,38 @@ export const AdminAdsManager: React.FC = () => {
 
         <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
           <div>
+            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-emerald-500" /> Link Protection System
+            </span>
+            <p className="text-[11px] text-zinc-400 mt-0.5">
+              Blocks right-click, long-press URL copying & prevents visitors from stealing your direct host links.
+            </p>
+          </div>
+          <button
+            onClick={() => setDraftConfig(p => ({ ...p, linkProtectionEnabled: p.linkProtectionEnabled === false ? true : false }))}
+            className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-2 ${
+              draftConfig.linkProtectionEnabled !== false ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'
+            }`}
+            title="Toggle Download Link Protection"
+          >
+            <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
+              draftConfig.linkProtectionEnabled !== false ? 'translate-x-6' : 'translate-x-0'
+            }`} />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+          <div>
             <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
               Demo Preview Mode
             </span>
-            <p className="text-[11px] text-zinc-400">
+            <p className="text-[11px] text-zinc-400 mt-0.5">
               When enabled, empty ad slots display high-converting Adsterra partner preview banners.
             </p>
           </div>
           <button
             onClick={() => setDraftConfig(p => ({ ...p, demoMode: !p.demoMode }))}
-            className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer shrink-0 ${
+            className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-2 ${
               draftConfig.demoMode ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-700'
             }`}
           >
