@@ -402,6 +402,10 @@ service cloud.firestore {
     match /apks/{document=**} {
       allow read, write: if true;
     }
+    // Allow read and write for Smart Ads & site settings
+    match /settings/{document=**} {
+      allow read, write: if true;
+    }
   }
 }`;
 

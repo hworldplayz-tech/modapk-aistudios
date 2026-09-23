@@ -4,6 +4,7 @@ import {
   collection, 
   getDocs, 
   doc, 
+  getDoc,
   setDoc, 
   deleteDoc, 
   updateDoc, 
@@ -228,22 +229,16 @@ export function saveLocalAdsConfig(config: SiteAdsConfig): void {
 export async function fetchAdsConfig(): Promise<{ config: SiteAdsConfig; source: 'firestore' | 'local' }> {
   try {
     const docRef = doc(db, SETTINGS_COLLECTION, ADS_DOC_ID);
-    const querySnapshot = await getDocs(query(collection(db, SETTINGS_COLLECTION)));
-    
-    let firestoreData: SiteAdsConfig | null = null;
-    querySnapshot.forEach((d) => {
-      if (d.id === ADS_DOC_ID) {
-        firestoreData = d.data() as SiteAdsConfig;
-      }
-    });
+    const docSnap = await getDoc(docRef);
 
-    if (firestoreData) {
+    if (docSnap.exists()) {
+      const firestoreData = docSnap.data() as SiteAdsConfig;
       const merged = { ...DEFAULT_ADS_CONFIG, ...firestoreData };
       saveLocalAdsConfig(merged);
       return { config: merged, source: 'firestore' };
     } else {
+      // Fallback: Check collection or seed initial config
       const local = getLocalAdsConfig();
-      // Try to seed initial ads config to firestore doc
       setDoc(docRef, local, { merge: true }).catch(() => {});
       return { config: local, source: 'local' };
     }
@@ -253,16 +248,40 @@ export async function fetchAdsConfig(): Promise<{ config: SiteAdsConfig; source:
   }
 }
 
-export async function saveAdsConfig(config: SiteAdsConfig): Promise<{ success: boolean; firestoreSynced: boolean }> {
+export async function saveAdsConfig(config: SiteAdsConfig): Promise<{ success: boolean; firestoreSynced: boolean; error?: string }> {
+  // 1. Immediately cache locally for ultra-responsive UI
   saveLocalAdsConfig(config);
-  let firestoreSynced = false;
+
+  // 2. Persist globally to Firebase Firestore
   try {
     const docRef = doc(db, SETTINGS_COLLECTION, ADS_DOC_ID);
     await setDoc(docRef, config, { merge: true });
-    firestoreSynced = true;
-  } catch (error) {
+    return { success: true, firestoreSynced: true };
+  } catch (error: any) {
     console.warn('Firestore ads config write failed (stored locally):', error);
+    return { success: true, firestoreSynced: false, error: error?.message || 'Firestore write error' };
   }
-  return { success: true, firestoreSynced };
+}
+
+/**
+ * Subscribe to real-time changes of ads configuration from Firebase Firestore
+ */
+export function subscribeToAdsConfig(callback: (config: SiteAdsConfig) => void): () => void {
+  try {
+    const docRef = doc(db, SETTINGS_COLLECTION, ADS_DOC_ID);
+    return onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const firestoreData = docSnap.data() as SiteAdsConfig;
+        const merged = { ...DEFAULT_ADS_CONFIG, ...firestoreData };
+        saveLocalAdsConfig(merged);
+        callback(merged);
+      }
+    }, (err) => {
+      console.warn('Real-time ads listener error:', err);
+    });
+  } catch (e) {
+    console.warn('Failed to attach ads real-time listener:', e);
+    return () => {};
+  }
 }
 

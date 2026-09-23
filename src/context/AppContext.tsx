@@ -11,6 +11,7 @@ import {
   seedInitialApksToFirestore,
   fetchAdsConfig,
   saveAdsConfig,
+  subscribeToAdsConfig,
   getLocalAdsConfig
 } from '../firebase';
 import { DEFAULT_ADS_CONFIG } from '../data/defaultAds';
@@ -143,6 +144,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     loadAppData();
+    // Subscribe to live Firestore ads updates so changes are instantly reflected on all devices
+    const unsubscribeAds = subscribeToAdsConfig((liveConfig) => {
+      setAdsConfig(liveConfig);
+    });
+    return () => {
+      unsubscribeAds();
+    };
   }, [loadAppData]);
 
   // Handle URL path / hash navigation for /admin, /games, /apps, /about, /apk/..., /download/..., etc.

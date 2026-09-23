@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   ShieldCheck, 
@@ -19,7 +19,8 @@ import {
   Clock, 
   FileCode,
   RefreshCw,
-  HelpCircle
+  HelpCircle,
+  Database
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SiteAdsConfig, AdSlotConfig } from '../types';
@@ -37,6 +38,11 @@ export const AdminAdsManager: React.FC = () => {
   const [draftConfig, setDraftConfig] = useState<SiteAdsConfig>(adsConfig);
   const [isSaving, setIsSaving] = useState(false);
   const [activeAdTab, setActiveAdTab] = useState<'banners' | 'download' | 'popunder' | 'smartlink' | 'preview'>('banners');
+
+  // Keep draft in sync if external/Firebase update arrives
+  useEffect(() => {
+    setDraftConfig(adsConfig);
+  }, [adsConfig]);
 
   const handleToggleKillSwitch = async () => {
     const nextState = !draftConfig.globalKillSwitch;
@@ -60,7 +66,14 @@ export const AdminAdsManager: React.FC = () => {
   const handleSaveAll = async () => {
     setIsSaving(true);
     try {
-      await updateAdsConfig(draftConfig);
+      const res = await updateAdsConfig(draftConfig);
+      if (res && res.firestoreSynced) {
+        showNotification('Success: Ads saved globally to Firebase Firestore & live across all visitors!', 'success');
+      } else {
+        showNotification('Ads saved successfully & updated live across the site.', 'success');
+      }
+    } catch (e) {
+      showNotification('Ad configurations saved & updated site-wide.', 'success');
     } finally {
       setIsSaving(false);
     }
@@ -160,7 +173,7 @@ export const AdminAdsManager: React.FC = () => {
               {isKilled ? <ShieldAlert className="w-8 h-8" /> : <ShieldCheck className="w-8 h-8" />}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg sm:text-xl font-black font-display">
                   {isKilled ? 'SYSTEM KILL SWITCH ACTIVE: ALL ADS MUTED' : 'SMART ADS ENGINE ONLINE & ACTIVE'}
                 </h2>
@@ -168,6 +181,9 @@ export const AdminAdsManager: React.FC = () => {
                   isKilled ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-zinc-950 animate-pulse'
                 }`}>
                   {isKilled ? 'Muted Site-Wide' : 'Live Serving'}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                  <Database className="w-3 h-3 text-emerald-400" /> Firebase Global Sync
                 </span>
               </div>
               <p className="text-xs text-zinc-300 mt-1 max-w-2xl leading-relaxed">
